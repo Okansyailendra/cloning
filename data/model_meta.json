@@ -1,0 +1,200 @@
+{
+  "model": {
+    "name": "Random Forest",
+    "algorithm": "RandomForestClassifier",
+    "hyperparameters": {
+      "n_estimators": 100,
+      "max_depth": 10,
+      "random_state": 42
+    },
+    "sklearn_version": "1.8.0",
+    "n_features": 10,
+    "classes": [
+      "berisik",
+      "non-berisik"
+    ]
+  },
+  "pipeline": {
+    "target_sr": 22050,
+    "top_db": 25,
+    "chunk_duration_s": 3,
+    "silence_removal": "split+concatenate",
+    "n_mfcc": 13
+  },
+  "features": [
+    {
+      "rank": 1,
+      "name": "rms_mean",
+      "display_name": "Volume Rata-rata",
+      "description": "Energi rata-rata sinyal; semakin besar nilainya, suara semakin keras.",
+      "unit": "",
+      "importance": 0.169
+    },
+    {
+      "rank": 2,
+      "name": "mfcc1_mean",
+      "display_name": "Bentuk Spektral Utama (MFCC 1)",
+      "description": "Energi spektral frekuensi rendah global.",
+      "unit": "",
+      "importance": 0.145
+    },
+    {
+      "rank": 3,
+      "name": "rms_std",
+      "display_name": "Variasi Volume (Dinamika)",
+      "description": "Standar deviasi energi; mendeteksi perubahan volume keras-pelan.",
+      "unit": "",
+      "importance": 0.128
+    },
+    {
+      "rank": 4,
+      "name": "mfcc3_mean",
+      "display_name": "Timbre MFCC 3",
+      "description": "Koefisien sepal spektral tingkat ketiga.",
+      "unit": "",
+      "importance": 0.112
+    },
+    {
+      "rank": 5,
+      "name": "zcr_mean",
+      "display_name": "Zero Crossing Rate (Desis)",
+      "description": "Frekuensi sinyal melintasi titik nol; tinggi pada desis/noise.",
+      "unit": "",
+      "importance": 0.098
+    },
+    {
+      "rank": 6,
+      "name": "mfcc6_mean",
+      "display_name": "Timbre MFCC 6",
+      "description": "Distribusi artikulasi resonansi tengah.",
+      "unit": "",
+      "importance": 0.089
+    },
+    {
+      "rank": 7,
+      "name": "mfcc7_mean",
+      "display_name": "Timbre MFCC 7",
+      "description": "Detail harmonik frekuensi menengah.",
+      "unit": "",
+      "importance": 0.076
+    },
+    {
+      "rank": 8,
+      "name": "mfcc13_mean",
+      "display_name": "Timbre MFCC 13",
+      "description": "Karakteristik tekstur mikro frekuensi tinggi.",
+      "unit": "",
+      "importance": 0.068
+    },
+    {
+      "rank": 9,
+      "name": "mfcc5_mean",
+      "display_name": "Timbre MFCC 5",
+      "description": "Keseimbangan spektral frekuensi vokal/lingkungan.",
+      "unit": "",
+      "importance": 0.061
+    },
+    {
+      "rank": 10,
+      "name": "centroid_mean",
+      "display_name": "Pusat Frekuensi (Kecerahan)",
+      "description": "Titik tengah massa spektrum frekuensi; tinggi = suara lebih cempreng/tajam.",
+      "unit": "Hz",
+      "importance": 0.054
+    }
+  ],
+  "metrics": {
+    "accuracy": 0.85,
+    "precision": 0.85,
+    "recall": 0.85,
+    "f1": 0.85,
+    "roc_auc": 0.8688,
+    "cv_mean": 0.8415,
+    "cv_std": 0.0294,
+    "confusion_matrix": {
+      "labels": [
+        "berisik",
+        "non-berisik"
+      ],
+      "matrix": [
+        [
+          17,
+          3
+        ],
+        [
+          3,
+          17
+        ]
+      ]
+    }
+  },
+  "model_comparison": [
+    {
+      "name": "Random Forest",
+      "accuracy": 0.85
+    },
+    {
+      "name": "Gradient Boosting",
+      "accuracy": 0.8
+    },
+    {
+      "name": "SVM RBF",
+      "accuracy": 0.775
+    },
+    {
+      "name": "SVM Linear",
+      "accuracy": 0.725
+    },
+    {
+      "name": "Logistic Regression",
+      "accuracy": 0.7
+    },
+    {
+      "name": "KNN",
+      "accuracy": 0.7
+    }
+  ],
+  "dataset": {
+    "total_files": 198,
+    "train": 158,
+    "test": 40,
+    "split": "80:20 stratified, random_state=42",
+    "source_sr_hz": 44100
+  },
+  "limits": {
+    "max_file_mb": 15,
+    "max_duration_s": 120,
+    "min_duration_s": 0.5,
+    "accepted_extensions": [
+      ".mp3",
+      ".wav",
+      ".ogg",
+      ".flac",
+      ".m4a"
+    ],
+    "warn_threshold": 0.65
+  },
+  "samples": [
+    {
+      "id": "contoh-berisik",
+      "title": "Contoh Berisik (Pasar/Jalanan)",
+      "expected_label": "berisik",
+      "duration_s": 30.0,
+      "url": "/samples/contoh-berisik.mp3"
+    },
+    {
+      "id": "contoh-non-berisik",
+      "title": "Contoh Non-Berisik (Kamar/Perpustakaan)",
+      "expected_label": "non-berisik",
+      "duration_s": 30.0,
+      "url": "/samples/contoh-non-berisik.mp3"
+    },
+    {
+      "id": "contoh-tidak-jelas",
+      "title": "Contoh Ambigu (Suara Samar)",
+      "expected_label": "ambigu",
+      "duration_s": 30.0,
+      "url": "/samples/contoh-tidak-jelas.mp3"
+    }
+  ]
+}

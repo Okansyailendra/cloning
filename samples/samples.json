@@ -1,0 +1,26 @@
+[
+  {
+    "id": "contoh-berisik",
+    "title": "Contoh Berisik (Jalanan/Ramai)",
+    "expected_label": "berisik",
+    "duration_s": 30.0,
+    "filename": "contoh-berisik.mp3",
+    "url": "/samples/contoh-berisik.mp3"
+  },
+  {
+    "id": "contoh-non-berisik",
+    "title": "Contoh Non-Berisik (Kamar/Tenang)",
+    "expected_label": "non-berisik",
+    "duration_s": 30.0,
+    "filename": "contoh-non-berisik.mp3",
+    "url": "/samples/contoh-non-berisik.mp3"
+  },
+  {
+    "id": "contoh-tidak-jelas",
+    "title": "Contoh Ambigu (Suara Samar)",
+    "expected_label": "ambigu",
+    "duration_s": 30.0,
+    "filename": "contoh-tidak-jelas.mp3",
+    "url": "/samples/contoh-tidak-jelas.mp3"
+  }
+]
