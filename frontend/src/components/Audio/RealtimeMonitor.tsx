@@ -495,6 +495,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
 
       const wavBlob = encodeWAV(ordered, TARGET_SR);
       const res = await predictLiveAudio(wavBlob);
+      setErrorMsg(null);
       setLiveData(res);
 
       const noiseProb = res.probabilities.berisik !== undefined
@@ -532,6 +533,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
 
     } catch (e: any) {
       console.warn('Live predict error:', e);
+      setErrorMsg('Gagal terhubung ke backend (port 8080). Pastikan server backend uvicorn sedang berjalan.');
     } finally {
       isPredictingRef.current = false;
     }
