@@ -6,32 +6,31 @@ interface SpectrogramCanvasProps {
   duration_s: number;
 }
 
-// Precomputed Inferno Colormap LUT (256 colors)
-const getInfernoColor = (val: number): [number, number, number] => {
-  // Approximate standard inferno: black -> purple -> red-orange -> yellow-white
+// Deep Space Teal to Solar Amber Colormap LUT (256 colors - ZERO PURPLE)
+const getAcousticTealAmberColor = (val: number): [number, number, number] => {
   const norm = Math.max(0, Math.min(255, val)) / 255;
   let r = 0, g = 0, b = 0;
 
   if (norm < 0.25) {
     const t = norm / 0.25;
-    r = Math.round(15 + t * 45);
-    g = Math.round(5 + t * 15);
-    b = Math.round(25 + t * 85);
+    r = Math.round(4 + t * 10);
+    g = Math.round(13 + t * 45);
+    b = Math.round(18 + t * 65);
   } else if (norm < 0.5) {
     const t = (norm - 0.25) / 0.25;
-    r = Math.round(60 + t * 135);
-    g = Math.round(20 + t * 45);
-    b = Math.round(110 - t * 30);
+    r = Math.round(14 + t * 16);
+    g = Math.round(58 + t * 126);
+    b = Math.round(83 + t * 83);
   } else if (norm < 0.75) {
     const t = (norm - 0.5) / 0.25;
-    r = Math.round(195 + t * 50);
-    g = Math.round(65 + t * 105);
-    b = Math.round(80 - t * 65);
+    r = Math.round(30 + t * 215);
+    g = Math.round(184 - t * 26);
+    b = Math.round(166 - t * 155);
   } else {
     const t = (norm - 0.75) / 0.25;
     r = Math.round(245 + t * 10);
-    g = Math.round(170 + t * 85);
-    b = Math.round(15 + t * 200);
+    g = Math.round(158 + t * 82);
+    b = Math.round(11 + t * 140);
   }
   return [r, g, b];
 };
@@ -57,12 +56,11 @@ export const SpectrogramCanvas: React.FC<SpectrogramCanvasProps> = ({ spectrogra
 
     // Draw from top (highest mel freq) to bottom (lowest mel freq)
     for (let mel = 0; mel < n_mels; mel++) {
-      // In data array, row 0 is lowest frequency, so invert for canvas top-to-bottom
       const dataRow = n_mels - 1 - mel;
       const row = data[dataRow] || [];
       for (let frame = 0; frame < n_frames; frame++) {
         const val = row[frame] ?? 0;
-        const [r, g, b] = getInfernoColor(val);
+        const [r, g, b] = getAcousticTealAmberColor(val);
         const idx = (mel * n_frames + frame) * 4;
         pixels[idx] = r;
         pixels[idx + 1] = g;
@@ -94,26 +92,23 @@ export const SpectrogramCanvas: React.FC<SpectrogramCanvasProps> = ({ spectrogra
   };
 
   return (
-    <div style={{
-      backgroundColor: 'var(--bg-surface)',
-      border: '1px solid var(--border-subtle)',
-      borderRadius: 'var(--radius-lg)',
-      padding: '16px 20px',
+    <div className="glass-card" style={{
+      padding: '20px 24px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '10px'
+      gap: '12px'
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#F0FDFA' }}>
           Spektrogram Mel (Energi Frekuensi terhadap Waktu)
         </h3>
-        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+        <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)' }}>
           {hoverInfo ? (
-            <span style={{ color: 'var(--accent-quiet)' }}>
+            <span style={{ color: '#2DD4BF', fontWeight: 600 }}>
               {hoverInfo.time_s} • {hoverInfo.freq_hz}
             </span>
           ) : (
-            <span style={{ color: 'var(--text-muted)' }}>64 Mel Bins • Colormap Inferno</span>
+            <span style={{ color: '#94A3B8' }}>64 Mel Bins • Spektrum Akustik Teal-Amber</span>
           )}
         </div>
       </div>
@@ -128,20 +123,20 @@ export const SpectrogramCanvas: React.FC<SpectrogramCanvasProps> = ({ spectrogra
             height: '160px',
             borderRadius: 'var(--radius-md)',
             imageRendering: 'pixelated',
-            border: '1px solid var(--border-subtle)',
+            border: '1px solid rgba(45, 212, 191, 0.2)',
             display: 'block'
           }}
         />
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
-          fontSize: '10px',
-          color: 'var(--text-muted)',
+          fontSize: '11px',
+          color: '#94A3B8',
           fontFamily: 'var(--font-mono)',
-          marginTop: '4px'
+          marginTop: '6px'
         }}>
           <span>0.0 dtk</span>
-          <span>Sumbu Frekuensi: 0 Hz — 11.025 Hz</span>
+          <span>Rentang Frekuensi: 0 Hz — 11.025 Hz</span>
           <span>{duration_s.toFixed(1)} dtk</span>
         </div>
       </div>

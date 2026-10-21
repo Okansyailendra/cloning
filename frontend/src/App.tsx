@@ -10,14 +10,21 @@ import { BatasanEtikaPage } from './pages/BatasanEtikaPage';
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-canvas)' }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: 'transparent'
+      }}>
         <Navbar />
         <main style={{
           flex: 1,
-          padding: '32px 40px',
-          maxWidth: '1200px',
+          padding: '28px 24px 60px',
+          maxWidth: '1440px',
           margin: '0 auto',
-          width: '100%'
+          width: '100%',
+          boxSizing: 'border-box'
         }}>
           <Routes>
             <Route path="/" element={<AnalisisPage />} />

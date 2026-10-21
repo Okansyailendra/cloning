@@ -4,43 +4,57 @@
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* Scientific Dark Oscilloscope Palette */
-  --bg-canvas: #0B0F14;
-  --bg-surface: #121922;
-  --bg-surface-elevated: #182230;
-  --bg-surface-subtle: #0F151E;
+  /* Deep Space Teal & Dark Navy Palette */
+  --bg-canvas: #040D12;
+  --bg-navy-deep: #07161F;
+  --bg-surface: rgba(11, 34, 48, 0.65);
+  --bg-surface-elevated: rgba(15, 46, 65, 0.75);
+  --bg-surface-subtle: rgba(7, 26, 38, 0.55);
   
-  --border-subtle: #1E293B;
-  --border-active: #334155;
-  --border-focus: #38BDF8;
+  --border-subtle: rgba(45, 212, 191, 0.18);
+  --border-active: rgba(45, 212, 191, 0.40);
+  --border-focus: #14B8A6;
 
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
+  --text-primary: #F0FDFA;
+  --text-secondary: #99F6E4;
+  --text-muted: #5EEAD4;
+  --text-slate: #94A3B8;
 
-  /* Class & Semantic Accents */
-  --accent-noisy: #FF6B35;
-  --accent-noisy-bg: rgba(255, 107, 53, 0.12);
-  --accent-noisy-border: rgba(255, 107, 53, 0.35);
+  /* Class & Semantic Accents (NO PURPLE / VIOLET / MAGENTA) */
+  --accent-quiet: #14B8A6;
+  --accent-quiet-emerald: #10B981;
+  --accent-quiet-cyan: #06B6D4;
+  --accent-quiet-bg: rgba(20, 184, 166, 0.12);
+  --accent-quiet-border: rgba(45, 212, 191, 0.35);
 
-  --accent-quiet: #22D3C5;
-  --accent-quiet-bg: rgba(34, 211, 197, 0.12);
-  --accent-quiet-border: rgba(34, 211, 197, 0.35);
+  --accent-noisy: #F97316;
+  --accent-noisy-amber: #F59E0B;
+  --accent-noisy-bg: rgba(249, 115, 22, 0.12);
+  --accent-noisy-border: rgba(249, 115, 22, 0.35);
 
-  --accent-neutral: #8B5CF6;
-  --accent-neutral-bg: rgba(139, 92, 246, 0.12);
+  --accent-neutral: #06B6D4;
+  --accent-neutral-bg: rgba(6, 182, 212, 0.12);
 
   --accent-warning: #F59E0B;
   --accent-warning-bg: rgba(245, 158, 11, 0.12);
   --accent-warning-border: rgba(245, 158, 11, 0.35);
 
   --accent-danger: #EF4444;
+  --accent-danger-coral: #F43F5E;
   --accent-danger-bg: rgba(239, 68, 68, 0.12);
+  --accent-danger-border: rgba(239, 68, 68, 0.35);
+
+  /* Glassmorphism & Elevation */
+  --glass-bg: rgba(11, 34, 48, 0.65);
+  --glass-backdrop: blur(16px);
+  --glass-border: 1px solid rgba(45, 212, 191, 0.20);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
 
   /* Geometry */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
 }
 
 *, *::before, *::after {
@@ -51,6 +65,10 @@
 
 body {
   background-color: var(--bg-canvas);
+  background-image: 
+    radial-gradient(ellipse 60% 50% at 10% 0%, rgba(20, 184, 166, 0.15) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 90% 100%, rgba(249, 115, 22, 0.10) 0%, transparent 70%);
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 15px;
@@ -60,7 +78,7 @@ body {
   min-height: 100vh;
 }
 
-/* Accessibility Focus Ring (antislop-human WCAG 2.1 AA) */
+/* Accessibility Focus Ring */
 :focus-visible {
   outline: 2px solid var(--border-focus);
   outline-offset: 2px;
@@ -83,7 +101,7 @@ a {
   text-decoration: none;
 }
 
-/* Scrollbars */
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -92,9 +110,9 @@ a {
   background: var(--bg-canvas);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
+  background: rgba(45, 212, 191, 0.25);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-active);
+  background: rgba(45, 212, 191, 0.45);
 }

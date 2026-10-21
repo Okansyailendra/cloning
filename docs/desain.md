@@ -29,113 +29,69 @@ Rujukan ID fitur (F01–F15) mengikuti PRD.md.
 
 ## 2. Warna
 
-### 2.1 Token inti
+### 2.1 Palet Deep Space Teal & Dark Navy (Bebas Warna Ungu / Violet / Magenta)
 
-| Token | Hex | Kegunaan |
+| Token | Nilai / Hex | Kegunaan |
 |---|---|---|
-| `--bg` | `#0B0F14` | Latar halaman |
-| `--surface` | `#121922` | Latar kartu, panel, sidebar |
-| `--surface-raised` | `#182230` | Hover kartu/baris, dropdown, modal |
-| `--border` | `#1F2A37` | Garis kartu, pemisah, grid plot |
-| `--border-strong` | `#2C3A4B` | Border input, hover border, grid plot sumbu utama |
-| `--text` | `#E6EDF3` | Teks utama |
-| `--text-muted` | `#8B98A9` | Teks sekunder, label sumbu, placeholder |
-| `--noisy` | `#FF6B35` | Aksen kelas BERISIK |
-| `--quiet` | `#22D3C5` | Aksen kelas NON-BERISIK |
-| `--neutral` | `#8B5CF6` | Aksen netral: tombol sekunder, nilai audio pengguna di grafik, peringatan |
-| `--neutral-text` | `#A78BFA` | Versi terang `--neutral` untuk teks kecil dan tautan (kontras AA) |
+| `--bg-canvas` | `#040D12` | Latar belakang dasar aplikasi |
+| `--bg-navy-deep` | `#07161F` | Gradasi kedalaman navy gelap |
+| `--radial-glow-teal` | `rgba(20, 184, 166, 0.15)` | Efek pencahayaan radial sudut kiri atas |
+| `--radial-glow-amber` | `rgba(249, 115, 22, 0.10)` | Efek pencahayaan radial sudut kanan bawah |
+| `--bg-surface` | `rgba(11, 34, 48, 0.65)` | Permukaan kartu (*Dark Glassmorphism*, blur 16 px) |
+| `--border-subtle` | `rgba(45, 212, 191, 0.18)` | Garis batas tipis cyan/teal transparan |
+| `--border-active` | `rgba(45, 212, 191, 0.40)` | Border fokus dan hover kartu |
+| `--text-primary` | `#F0FDFA` | Teks utama putih bersih |
+| `--text-secondary` | `#99F6E4` | Teks sekunder toska muda |
+| `--text-muted` | `#94A3B8` | Label teknis, sumbu, keterangan sekunder |
 
-### 2.2 Token state
+### 2.2 Warna Aksen & Semantik
 
-| Token | Hex | Kegunaan |
-|---|---|---|
-| `--noisy-hover` | `#FF8257` | Hover elemen berisik |
-| `--noisy-soft` | `rgba(255,107,53,0.14)` | Latar badge, sel timeline, area sorotan berisik |
-| `--noisy-glow` | `rgba(255,107,53,0.35)` | Glow elemen aktif berisik |
-| `--quiet-hover` | `#4BE0D4` | Hover elemen non-berisik |
-| `--quiet-soft` | `rgba(34,211,197,0.14)` | Latar badge, sel timeline, area sorotan non-berisik |
-| `--quiet-glow` | `rgba(34,211,197,0.35)` | Glow elemen aktif non-berisik |
-| `--neutral-hover` | `#9F7AF9` | Hover tombol sekunder |
-| `--neutral-soft` | `rgba(139,92,246,0.14)` | Latar banner peringatan, penanda nilai audio |
-| `--neutral-glow` | `rgba(139,92,246,0.35)` | Glow fokus dan kursor |
-| `--disabled-bg` | `#161E29` | Latar kontrol nonaktif |
-| `--disabled-text` | `#4B5868` | Teks kontrol nonaktif |
-| `--error` | `#F87171` | Pesan error, border input error (selalu disertai ikon + teks) |
-| `--error-soft` | `rgba(248,113,113,0.12)` | Latar banner error |
-| `--success` | `#34D399` | Toast sukses (selalu disertai ikon centang + teks) |
-| `--success-soft` | `rgba(52,211,153,0.12)` | Latar toast sukses |
-| `--focus-ring` | `#A78BFA` | Outline fokus keyboard (2 px, offset 2 px) |
+| Kategori | Token | Hex | Kegunaan |
+|---|---|---|---|
+| **Tenang / Normal (<70%)** | `--accent-quiet` | `#14B8A6` / `#10B981` | Aksen kelas NON-BERISIK, oskiloskop standby, grafik normal |
+| **Peringatan (70% - 90%)** | `--accent-warning` | `#F59E0B` / `#F97316` | Aksen kelas BERISIK moderat, alarm 70-90% |
+| **Bahaya (≥ 90%)** | `--accent-danger` | `#EF4444` / `#F43F5E` | Aksen bahaya kebisingan tinggi, alarm 90-100% |
 
-**Aturan penggunaan warna**
-1. `--noisy` dan `--quiet` hanya dipakai untuk menandai kelas. Dilarang dipakai untuk dekorasi atau status umum.
-2. Peringatan confidence rendah memakai `--neutral` agar tidak bentrok dengan warna kelas.
-3. `--error` dan `--success` tidak dipakai di grafik.
-4. Warna tidak boleh menjadi satu-satunya pembeda: kelas selalu disertai teks dan ikon (speaker / speaker-mute).
-5. Teks di atas tombol berwarna `--noisy`, `--quiet`, atau `--neutral` memakai `--bg` (`#0B0F14`).
-
-### 2.3 Kontras (target WCAG AA; verifikasi akhir dengan alat Lighthouse/axe)
-
-| Pasangan | Perkiraan rasio | Penggunaan |
-|---|---|---|
-| `--text` di atas `--bg` | ≥ 15:1 | Semua teks |
-| `--text-muted` di atas `--surface` | ≥ 5:1 | Teks sekunder |
-| `--noisy` di atas `--surface` | ≥ 6:1 | Angka dan label berisik |
-| `--quiet` di atas `--surface` | ≥ 9:1 | Angka dan label non-berisik |
-| `--neutral-text` di atas `--surface` | ≥ 6:1 | Tautan dan teks kecil netral |
-| `--neutral` di atas `--surface` | ≈ 4:1 | **Hanya** grafik, border, ikon besar (≥ 3:1), bukan teks kecil |
-| `--bg` di atas `--noisy` / `--quiet` | ≥ 7:1 | Teks tombol |
+**Aturan Penggunaan Warna:**
+1. DILARANG menggunakan warna ungu, violet, atau magenta di seluruh elemen antarmuka.
+2. Gaya visual mengutamakan perpaduan *Deep Space Teal, Cyan, Amber*, dan *Coral*.
+3. Setiap status penting selalu didampingi teks penjelasan dan ikon (bukan hanya warna).
 
 ## 3. Tipografi
 
 | Peran | Font | Bobot | Fallback |
 |---|---|---|---|
-| Judul | Space Grotesk | 600 | `system-ui, sans-serif` |
-| Isi | Inter | 400, 500 | `system-ui, sans-serif` |
-| Angka dan label teknis | JetBrains Mono | 400, 500 | `ui-monospace, monospace` |
+| Judul | Space Grotesk | 600, 700, 800 | `system-ui, sans-serif` |
+| Isi | Inter | 400, 500, 600 | `system-ui, sans-serif` |
+| Angka dan label teknis | JetBrains Mono | 400, 500, 600 | `ui-monospace, monospace` |
 
-Skala ukuran: **12 / 14 / 16 / 20 / 28 / 44 px**.
+Skala ukuran: **11 / 12 / 13 / 15 / 17 / 24 / 32 / 40 px**.
 
-| Token | Ukuran | Bobot | Line-height | Font | Penggunaan |
-|---|---|---|---|---|---|
-| `display` | 44 (mobile 28) | 600 | 1,1 | Space Grotesk | Judul hero halaman Analisis |
-| `h2` | 28 (mobile 20) | 600 | 1,2 | Space Grotesk | Judul halaman |
-| `h3` | 20 | 600 | 1,3 | Space Grotesk | Judul section/kartu |
-| `body` | 16 | 400 | 1,6 | Inter | Paragraf |
-| `body-strong` | 16 | 500 | 1,6 | Inter | Penekanan |
-| `small` | 14 | 400/500 | 1,5 | Inter | Teks sekunder, tabel, tombol |
-| `caption` | 12 | 400 | 1,4 | Inter | Catatan kaki, tooltip |
-| `mono-value` | 14 | 500 | 1,4 | JetBrains Mono | Nilai fitur, waktu, ukuran file |
-| `mono-label` | 12 | 500 | 1,4 | JetBrains Mono | Label sumbu, label teknis (huruf kapital, letter-spacing 0,06em) |
-| `mono-hero` | 44 | 500 | 1,0 | JetBrains Mono | Angka confidence di gauge |
+## 4. Spacing, Radius, Glassmorphism
 
-Aturan: angka selalu `font-variant-numeric: tabular-nums`; panjang baris paragraf maksimum 72 karakter; teks UI tidak lebih kecil dari 12 px.
+- **Permukaan Kartu:** `background: rgba(11, 34, 48, 0.65)`, `backdrop-filter: blur(16px)`, `border: 1px solid rgba(45, 212, 191, 0.20)`.
+- **Radius:** `radius-sm` = 6 px, `radius-md` = 10 px, `radius-lg` = 16 px, `pill` = 9999 px.
+- **Bayangan:** `box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45)`.
 
-## 4. Spacing, Radius, Bayangan
+## 5. Tata Letak (Layout): Landing Page + Integrated Live Workspace
 
-**Spacing (basis 4 px):** `space-1`=4, `space-2`=8, `space-3`=12, `space-4`=16, `space-6`=24, `space-8`=32, `space-12`=48, `space-16`=64.
-- Padding kartu: 24 px (desktop/tablet), 16 px (mobile).
-- Jarak antar kartu: 24 px (desktop), 16 px (mobile).
+Aplikasi mengadopsi tata letak modern satu atap (*integrated workspace*) tanpa bilah sisi (sidebar) kiri dan tanpa mekanisme login/autentikasi:
 
-**Radius:** `radius-sm`=6 px (input, tombol kecil, sel timeline), `radius-md`=12 px (kartu, panel, modal, upload zone), `radius-pill`=999 px (badge, tombol utama bila pill).
+1. **Top Navbar Melayang (*Sticky Glassmorphism Header*):**
+   - Menempel di bagian atas layar (`position: sticky; top: 0; z-index: 100`).
+   - Sisi Kiri: Logo brand Sound Lab dengan animasi ikon gelombang suara.
+   - Tengah: Tautan navigasi utama kapsul (`Analisis Audio`, `Riwayat`, `Bandingkan`, `Tentang Model`, `Batasan & Etika`).
+   - Sisi Kanan: Badge spesifikasi model (`v1.0 • Random Forest`) dan indikator status backend real-time (`● Engine Siap` / `● Engine Offline` dari `/api/health`).
+   - Tanpa tombol login, registrasi, atau coba gratis.
 
-**Bayangan:** tanpa bayangan tebal. Kedalaman dibuat dengan border 1 px `--border`.
-- `elev-0`: tanpa bayangan (kartu).
-- `elev-1` (dropdown, toast): `0 8px 24px rgba(0,0,0,0.45)`.
-- `glow-active`: `0 0 0 1px <warna-soft>, 0 0 16px <warna-glow>` pada elemen aktif.
+2. **Hero Section + Panel Kontrol Berdampingan (Split Hero Layout):**
+   - **Sisi Kiri (Hero Intro):** Headline besar *"Analisis Kebisingan Lingkungan Kerja"* dengan gradasi teks Teal ke Cyan, deskripsi aplikasi, dekorasi gelombang frekuensi suara, dan 2 tombol CTA: **"Mulai Deteksi Sekarang"** dan **"Pelajari Fitur"**.
+   - **Sisi Kanan (Control Card):** Tab switch (`Deteksi Real-Time` vs `Analisis Berkas / Sampel`), badge status (`STANDBY` / `MONITORING`), durasi timer, toggle `Alarm Suara: AKTIF/MATI`, tombol utama `▶ Mulai Monitoring`, status ambang alarm (`70% - 90%: alarm_70-90%.mp3` & `≥ 90%: alarm_90-100%.mp3`), slider volume alarm, dan tombol uji suara (`▶ Uji 70-90%`, `▶ Uji ≥90%`).
 
-## 5. Grid, Breakpoint, dan Navigasi
-
-| Breakpoint | Lebar | Kolom | Margin | Gutter | Navigasi |
-|---|---|---|---|---|---|
-| Mobile | 360–767 | 4 | 16 | 16 | Tab bar bawah (56 px) |
-| Tablet | 768–1279 | 8 | 24 | 20 | Sidebar tipis 72 px |
-| Desktop | ≥ 1280 | 12 | 32 | 24 | Sidebar tipis 88 px, lebar konten maks 1200 px |
-
-**Sidebar (tablet/desktop):** tinggi penuh, latar `--surface`, border kanan 1 px `--border`. Item vertikal: ikon 24 px, label 12 px di bawah ikon. Urutan: Analisis, Riwayat, Bandingkan, Tentang Model, Batasan & Etika. Logo "Sound Lab" (ikon gelombang + teks) di atas. Item aktif: latar `--surface-raised`, garis vertikal 3 px `--neutral` di sisi kiri, ikon dan label `--text`.
-
-**Tab bar bawah (mobile):** 5 item ikon + label 12 px; item aktif memakai warna `--neutral-text`. Label "Batasan & Etika" disingkat "Etika" di mobile.
-
-**Skip link:** tautan "Lewati ke konten utama" muncul saat fokus pertama.
+3. **Bagian Bawah (2 Kolom Sejajar pada Desktop):**
+   - **Kolom Kiri:** Kartu **Oskiloskop Sinyal Suara Langsung (60 FPS)** dengan grid teknis lab, gelombang berlapis (*primary glow* + *faint secondary wave*), dan animasi ritme aritmia standby saat idle.
+   - **Kolom Kanan:** Kartu **Linimasa Riwayat Kebisingan (30 Detik Terakhir)** dengan kurva mulus *Bezier spline area chart*, gradasi bertingkat (hijau-toska <70%, oranye 70-90%, merah ≥90%), dan indikator titik pulsa temporal.
+   - **Ringkasan Kumulatif Sesi:** Kartu statistik total durasi evaluasi, persentase dominasi berisik vs tenang, dan puncak volume (Peak RMS).
 
 ## 6. Ikonografi
 - Set ikon: Lucide (stroke 1,75 px, ukuran 20/24 px), warna mengikuti teks atau warna kelas.

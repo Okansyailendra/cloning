@@ -16,7 +16,7 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
   activeIntervals,
   currentTime = 0,
   onSeek,
-  accentColor = '#22D3C5'
+  accentColor = '#14B8A6'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -31,11 +31,11 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
     const centerY = height / 2;
 
     // Clear
-    ctx.fillStyle = '#0F151E';
+    ctx.fillStyle = '#040D12';
     ctx.fillRect(0, 0, width, height);
 
     // Grid center line
-    ctx.strokeStyle = '#1E293B';
+    ctx.strokeStyle = 'rgba(45, 212, 191, 0.15)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, centerY);
@@ -51,7 +51,7 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
       activeIntervals.forEach(([start, end]) => {
         const x1 = (start / duration_s) * width;
         const x2 = (end / duration_s) * width;
-        ctx.fillStyle = 'rgba(34, 211, 197, 0.05)';
+        ctx.fillStyle = 'rgba(20, 184, 166, 0.08)';
         ctx.fillRect(x1, 0, x2 - x1, height);
       });
     }
@@ -70,14 +70,14 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
       const timeAtPoint = (i / points) * duration_s;
       const isActive = activeIntervals.some(([s, e]) => timeAtPoint >= s && timeAtPoint <= e);
 
-      ctx.fillStyle = isActive ? accentColor : '#475569';
+      ctx.fillStyle = isActive ? accentColor : '#334155';
       ctx.fillRect(x, yTop, Math.max(1, barWidth - 0.5), Math.max(1, yBottom - yTop));
     }
 
     // Draw playhead vertical line
     if (duration_s > 0 && currentTime >= 0) {
       const playheadX = Math.min(width, (currentTime / duration_s) * width);
-      ctx.strokeStyle = '#F8FAFC';
+      ctx.strokeStyle = '#F0FDFA';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
@@ -95,21 +95,18 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
   };
 
   return (
-    <div style={{
-      backgroundColor: 'var(--bg-surface)',
-      border: '1px solid var(--border-subtle)',
-      borderRadius: 'var(--radius-lg)',
-      padding: '16px 20px',
+    <div className="glass-card" style={{
+      padding: '20px 24px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '10px'
+      gap: '12px'
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#F0FDFA' }}>
           Bentuk Gelombang Sinyal (Waveform)
         </h3>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-          {waveform.points} titik sampel • Klik untuk navigasi pemutar
+        <span style={{ fontSize: '11px', color: '#94A3B8', fontFamily: 'var(--font-mono)' }}>
+          {waveform.points} titik sampel • Klik canvas untuk navigasi audio
         </span>
       </div>
 
@@ -123,7 +120,8 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
           height: '140px',
           borderRadius: 'var(--radius-md)',
           cursor: onSeek ? 'pointer' : 'default',
-          border: '1px solid var(--border-subtle)'
+          border: '1px solid rgba(45, 212, 191, 0.2)',
+          display: 'block'
         }}
       />
     </div>
