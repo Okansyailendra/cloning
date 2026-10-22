@@ -211,6 +211,9 @@ export interface LivePredictResponse {
   zcr: number;
   low_confidence: boolean;
   status_text: string;
+  mfcc1?: number;
+  mfcc3?: number;
+  rms_std?: number;
 }
 
 export interface LiveHistoryPoint {

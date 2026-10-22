@@ -1,7 +1,8 @@
 import os
 import sys
 
-sys.path.insert(0, r"c:\laragon\www\Bismillah_A\backend")
+base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(base_dir, "backend"))
 
 import numpy as np
 import pandas as pd
@@ -9,7 +10,7 @@ from app.services.audio_loader import load_and_preprocess_audio
 from app.services.features import extract_features, FEATURE_NAMES
 
 def test_feature_parity():
-    csv_path = r"c:\laragon\www\Bismillah_A\data\train_data.csv"
+    csv_path = os.path.join(base_dir, "data", "train_data.csv")
     df = pd.read_csv(csv_path)
 
     audio_dirs = [

@@ -8,7 +8,7 @@
       "random_state": 42
     },
     "sklearn_version": "1.8.0",
-    "n_features": 10,
+    "n_features": 14,
     "classes": [
       "berisik",
       "non-berisik"
@@ -28,89 +28,121 @@
       "display_name": "Volume Rata-rata",
       "description": "Energi rata-rata sinyal; semakin besar nilainya, suara semakin keras.",
       "unit": "",
-      "importance": 0.169
+      "importance": 0.1992
     },
     {
       "rank": 2,
-      "name": "mfcc1_mean",
-      "display_name": "Bentuk Spektral Utama (MFCC 1)",
-      "description": "Energi spektral frekuensi rendah global.",
-      "unit": "",
-      "importance": 0.145
-    },
-    {
-      "rank": 3,
       "name": "rms_std",
       "display_name": "Variasi Volume (Dinamika)",
       "description": "Standar deviasi energi; mendeteksi perubahan volume keras-pelan.",
       "unit": "",
-      "importance": 0.128
+      "importance": 0.1071
     },
     {
-      "rank": 4,
+      "rank": 3,
       "name": "mfcc3_mean",
       "display_name": "Timbre MFCC 3",
       "description": "Koefisien sepal spektral tingkat ketiga.",
       "unit": "",
-      "importance": 0.112
+      "importance": 0.0874
+    },
+    {
+      "rank": 4,
+      "name": "mfcc1_mean",
+      "display_name": "Bentuk Spektral Utama (MFCC 1)",
+      "description": "Energi spektral frekuensi rendah global.",
+      "unit": "",
+      "importance": 0.0827
     },
     {
       "rank": 5,
-      "name": "zcr_mean",
-      "display_name": "Zero Crossing Rate (Desis)",
-      "description": "Frekuensi sinyal melintasi titik nol; tinggi pada desis/noise.",
-      "unit": "",
-      "importance": 0.098
-    },
-    {
-      "rank": 6,
-      "name": "mfcc6_mean",
-      "display_name": "Timbre MFCC 6",
-      "description": "Distribusi artikulasi resonansi tengah.",
-      "unit": "",
-      "importance": 0.089
-    },
-    {
-      "rank": 7,
-      "name": "mfcc7_mean",
-      "display_name": "Timbre MFCC 7",
-      "description": "Detail harmonik frekuensi menengah.",
-      "unit": "",
-      "importance": 0.076
-    },
-    {
-      "rank": 8,
-      "name": "mfcc13_mean",
-      "display_name": "Timbre MFCC 13",
-      "description": "Karakteristik tekstur mikro frekuensi tinggi.",
-      "unit": "",
-      "importance": 0.068
-    },
-    {
-      "rank": 9,
       "name": "mfcc5_mean",
       "display_name": "Timbre MFCC 5",
       "description": "Keseimbangan spektral frekuensi vokal/lingkungan.",
       "unit": "",
-      "importance": 0.061
+      "importance": 0.0797
     },
     {
-      "rank": 10,
+      "rank": 6,
+      "name": "mfcc7_mean",
+      "display_name": "Timbre MFCC 7",
+      "description": "Detail harmonik frekuensi menengah.",
+      "unit": "",
+      "importance": 0.0573
+    },
+    {
+      "rank": 7,
+      "name": "mfcc11_mean",
+      "display_name": "Timbre MFCC 11",
+      "description": "Spektrum mikro resolusi atas.",
+      "unit": "",
+      "importance": 0.0547
+    },
+    {
+      "rank": 8,
+      "name": "zcr_mean",
+      "display_name": "Zero Crossing Rate (Desis)",
+      "description": "Frekuensi sinyal melintasi titik nol; tinggi pada desis/noise.",
+      "unit": "",
+      "importance": 0.052
+    },
+    {
+      "rank": 9,
       "name": "centroid_mean",
       "display_name": "Pusat Frekuensi (Kecerahan)",
       "description": "Titik tengah massa spektrum frekuensi; tinggi = suara lebih cempreng/tajam.",
       "unit": "Hz",
-      "importance": 0.054
+      "importance": 0.0496
+    },
+    {
+      "rank": 10,
+      "name": "mfcc13_mean",
+      "display_name": "Timbre MFCC 13",
+      "description": "Karakteristik tekstur mikro frekuensi tinggi.",
+      "unit": "",
+      "importance": 0.0494
+    },
+    {
+      "rank": 11,
+      "name": "mfcc10_mean",
+      "display_name": "Timbre MFCC 10",
+      "description": "Detail harmonik desis tingkat tinggi.",
+      "unit": "",
+      "importance": 0.0479
+    },
+    {
+      "rank": 12,
+      "name": "mfcc8_mean",
+      "display_name": "Timbre MFCC 8",
+      "description": "Resonansi menengah-tinggi frekuensi bising.",
+      "unit": "",
+      "importance": 0.046
+    },
+    {
+      "rank": 13,
+      "name": "mfcc6_mean",
+      "display_name": "Timbre MFCC 6",
+      "description": "Distribusi artikulasi resonansi tengah.",
+      "unit": "",
+      "importance": 0.0452
+    },
+    {
+      "rank": 14,
+      "name": "mfcc9_mean",
+      "display_name": "Timbre MFCC 9",
+      "description": "Transisi timbre mikro frekuensi atas.",
+      "unit": "",
+      "importance": 0.0417
     }
   ],
   "metrics": {
-    "accuracy": 0.85,
-    "precision": 0.85,
+    "accuracy": 0.925,
+    "precision": 1.0,
     "recall": 0.85,
-    "f1": 0.85,
-    "roc_auc": 0.8688,
-    "cv_mean": 0.8415,
-    "cv_std": 0.0294,
+    "f1": 0.9246,
+    "roc_auc": 0.925,
+    "cv_mean": 0.8187,
+    "cv_std": 0.0364,
     "confusion_matrix": {
       "labels": [
         "berisik",
@@ -122,8 +154,8 @@
           3
         ],
         [
-          3,
-          17
+          0,
+          20
         ]
       ]
     }
@@ -131,11 +163,11 @@
   "model_comparison": [
     {
       "name": "Random Forest",
-      "accuracy": 0.85
+      "accuracy": 0.925
     },
     {
       "name": "Gradient Boosting",
-      "accuracy": 0.8
+      "accuracy": 0.825
     },
     {
       "name": "SVM RBF",
@@ -155,8 +187,8 @@
     }
   ],
   "dataset": {
-    "total_files": 198,
-    "train": 158,
+    "total_files": 200,
+    "train": 160,
     "test": 40,
     "split": "80:20 stratified, random_state=42",
     "source_sr_hz": 44100

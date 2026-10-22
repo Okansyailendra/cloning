@@ -1,18 +1,18 @@
-# Sound Lab — Sistem Klasifikasi Audio Kebisingan Lingkungan Kerja
+# Sonalyze — Sistem Deteksi & Klasifikasi Kebisingan Audio Real-Time
 
-Aplikasi web cerdas untuk analisis dan klasifikasi tingkat kebisingan audio lingkungan kerja (*Berisik* vs *Non-Berisik*) menggunakan ekstraksi fitur spektral audio digital dan algoritma pembelajaran mesin **Random Forest**.
+Aplikasi web cerdas untuk analisis dan klasifikasi tingkat kebisingan audio (*Berisik* vs *Non-Berisik*) secara real-time menggunakan ekstraksi fitur spektral audio digital dan algoritma pembelajaran mesin **Random Forest** untuk tugas mata kuliah **Proyek Sains Data** (PSD).
 
 ---
 
 ## Informasi Akademik Proyek
-- **Mata Kuliah:** Pengolahan Sinyal Digital (PSD)
+- **Mata Kuliah:** Proyek Sains Data (PSD)
 - **Program Studi:** Sains Data / Teknik Informatika
 - **Tim Pengembang:**
   - Muhammad Zaidan Nabil Rafi (240411100068)
   - Okan Syailendra Wahyudi (240411100179)
   - Alifah Sayyidaturrhohma (240411100145)
-- **Dataset:** 198 sampel audio lingkungan kerja (158 data latih, 40 data uji)
-- **Akurasi Model Terpilih (Random Forest):** 85,0% (F1-Score: 85,0%, ROC-AUC: 0.8688)
+- **Dataset:** 200 sampel audio rekaman suara PSD (160 data latih, 40 data uji)
+- **Akurasi Model Terpilih (Random Forest):** 92,5% (F1-Score: 92,5%, ROC-AUC: 0.9250)
 - **Tanggal:** Oktober 2026
 
 ---
@@ -30,42 +30,46 @@ Aplikasi web cerdas untuk analisis dan klasifikasi tingkat kebisingan audio ling
 2. **Mode Analisis Berkas & Sampel Uji:**
    - **Unggah Berkas:** Mendukung MP3, WAV, OGG, FLAC, M4A hingga 15 MB.
    - **1-Click Sampel Pengujian:** 3 berkas audio contoh (*Pabrik Bising*, *Kantor Tenang*, dan *Transisi*).
-2. **Visualisasi Sinyal & Spektrogram Interaktif:**
+3. **Visualisasi Sinyal & Spektrogram Interaktif:**
    - **Waveform Canvas:** Downsampling 2000 titik sampel sinkron dengan *audio player* dan penanda interval hening.
    - **Spektrogram Mel (64 Bins):** Pemetaan warna *Inferno* dengan inspeksi frekuensi (Hz) dan waktu (*hover tooltip*).
    - **Linimasa Prediksi per Chunk (3 Detik):** Analisis temporal dinamis untuk melacak letupan suara berisik.
-3. **Transparansi Hasil & Model Explainability:**
-   - **Penjelasan Bahasa Awam:** Heuristik komparasi jarak fitur terhadap rata-rata kelas data latih (3 faktor penguat + 1 faktor kontra).
-   - **Tabel 10 Fitur Wajib:** Nilai audio terhadap distribusi kelas latih beserta urutan bobot *Mean Decrease in Impurity* (MDI).
+4. **Transparansi Hasil & Model Explainability:**
+   - **Penjelasan Bahasa Awam:** Heuristik komparasi jarak fitur terhadap rata-rata kelas data latih (faktor penguat dan faktor penyeimbang).
+   - **Tabel 14 Fitur Spektral:** Nilai audio terhadap distribusi kelas latih beserta urutan bobot *Mean Decrease in Impurity* (MDI).
    - **Peringatan Ambang Batas:** Indikator visual bila keyakinan model < 65% atau audio mengalami *clipping*.
-4. **Riwayat Sesi & Ekspor:**
+5. **Riwayat Sesi & Ekspor:**
    - Penyimpanan riwayat lokal (`sessionStorage`) hingga 50 pengujian.
    - Fitur **Ekspor CSV** untuk dokumentasi data pengujian.
-5. **Komparasi Berdampingan (*Side-by-Side*):**
+6. **Komparasi Berdampingan (*Side-by-Side*):**
    - Membandingkan 2 rekaman audio secara langsung (nilai fitur akustik dan selisihnya).
-6. **Tentang Model & Batasan Etika:**
-   - Matriks konfusi 2x2, perbandingan 6 model evaluasi (*Random Forest, Gradient Boosting, SVM, LogReg, KNN*), serta panduan batasan perangkat keras dan kebijakan privasi.
+7. **Tentang Model:**
+   - Matriks konfusi 2x2, perbandingan 6 model evaluasi (*Random Forest, Gradient Boosting, SVM, LogReg, KNN*), serta spesifikasi teknis parameter model.
 
 ---
 
-## 10 Fitur Spektral yang Diekstraksi
+## 14 Fitur Spektral yang Diekstraksi
 
 Pipeline audio membuang bagian hening (*silence removal*) menggunakan `librosa.effects.split(top_db=25)` dan menggabungkan segmen aktif (`np.concatenate`) pada frekuensi sampling 22.050 Hz:
 
 | # | Nama Fitur | Parameter Fisik | Bobot (MDI) |
 |---|---|---|:---:|
-| 1 | `rms_mean` | Volume rata-rata (Root Mean Square) | 0.169 |
-| 2 | `mfcc1_mean` | Bentuk spektrum energi keseluruhan | 0.094 |
-| 3 | `rms_std` | Dinamika / naik-turun volume antar frame | 0.092 |
-| 4 | `mfcc3_mean` | Warna suara / timbre komponen ke-3 | 0.087 |
-| 5 | `zcr_mean` | Kerapatan perpotongan nol (desis frekuensi tinggi) | 0.056 |
-| 6 | `mfcc6_mean` | Detail warna suara ke-6 | 0.053 |
-| 7 | `mfcc7_mean` | Detail warna suara ke-7 | 0.053 |
-| 8 | `mfcc13_mean` | Detail halus timbre ke-13 | 0.045 |
-| 9 | `mfcc5_mean` | Detail warna suara ke-5 | 0.045 |
-| 10 | `centroid_mean` | Pusat massa spektrum (kecerahan suara dalam Hz) | 0.044 |
+| 1 | `rms_mean` | Volume rata-rata (Root Mean Square) | 0.199 |
+| 2 | `rms_std` | Dinamika / naik-turun volume antar frame | 0.107 |
+| 3 | `mfcc3_mean` | Warna suara / timbre komponen ke-3 | 0.087 |
+| 4 | `mfcc1_mean` | Bentuk spektrum energi keseluruhan | 0.083 |
+| 5 | `mfcc5_mean` | Keseimbangan spektral frekuensi vokal/lingkungan | 0.080 |
+| 6 | `mfcc7_mean` | Detail harmonik frekuensi menengah ke-7 | 0.057 |
+| 7 | `mfcc11_mean` | Spektrum mikro resolusi atas ke-11 | 0.055 |
+| 8 | `zcr_mean` | Kerapatan perpotongan nol (desis frekuensi tinggi) | 0.052 |
+| 9 | `centroid_mean` | Pusat massa spektrum (kecerahan suara dalam Hz) | 0.050 |
+| 10 | `mfcc13_mean` | Karakteristik tekstur mikro frekuensi tinggi ke-13 | 0.049 |
+| 11 | `mfcc10_mean` | Detail harmonik desis tingkat tinggi ke-10 | 0.048 |
+| 12 | `mfcc8_mean` | Resonansi menengah-tinggi frekuensi bising ke-8 | 0.046 |
+| 13 | `mfcc6_mean` | Distribusi artikulasi resonansi tengah ke-6 | 0.045 |
+| 14 | `mfcc9_mean` | Transisi timbre mikro frekuensi atas ke-9 | 0.042 |
 
----
+-----
 
 ## Cara Menjalankan Aplikasi
 
@@ -117,7 +121,7 @@ Buka peramban di: **`http://localhost:8080/`**
 
 Sistem dilengkapi rangkaian pengujian otomatis:
 ```bash
-# 1. Uji pemuatan model & spesifikasi 10 fitur:
+# 1. Uji pemuatan model & spesifikasi 14 fitur:
 python backend/tests/test_model_load.py
 
 # 2. Uji paritas fitur vs data latih (P1):

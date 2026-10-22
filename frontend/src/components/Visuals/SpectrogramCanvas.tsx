@@ -99,16 +99,16 @@ export const SpectrogramCanvas: React.FC<SpectrogramCanvasProps> = ({ spectrogra
       gap: '12px'
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#F0FDFA' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
           Spektrogram Mel (Energi Frekuensi terhadap Waktu)
         </h3>
         <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)' }}>
           {hoverInfo ? (
-            <span style={{ color: '#4ADE80', fontWeight: 600 }}>
+            <span style={{ color: 'var(--accent-quiet)', fontWeight: 600 }}>
               {hoverInfo.time_s} • {hoverInfo.freq_hz}
             </span>
           ) : (
-            <span style={{ color: '#94A3B8' }}>64 Mel Bins • Spektrum Akustik Emerald-Lime</span>
+            <span style={{ color: 'var(--text-secondary)' }}>64 Mel Bins • Spektrum Akustik</span>
           )}
         </div>
       </div>
@@ -123,7 +123,7 @@ export const SpectrogramCanvas: React.FC<SpectrogramCanvasProps> = ({ spectrogra
             height: '160px',
             borderRadius: 'var(--radius-md)',
             imageRendering: 'pixelated',
-            border: '1px solid rgba(74, 222, 128, 0.25)',
+            border: '1px solid var(--border-subtle)',
             display: 'block'
           }}
         />
@@ -131,7 +131,7 @@ export const SpectrogramCanvas: React.FC<SpectrogramCanvasProps> = ({ spectrogra
           display: 'flex',
           justifyContent: 'space-between',
           fontSize: '11px',
-          color: '#94A3B8',
+          color: 'var(--text-secondary)',
           fontFamily: 'var(--font-mono)',
           marginTop: '6px'
         }}>

@@ -10,21 +10,21 @@ export const SampleAudios: React.FC<SampleAudiosProps> = ({ onSelectSample, isLo
   const sampleList = [
     {
       id: 'berisik-1',
-      title: 'Contoh Berisik (Pabrik / Konstruksi)',
+      title: 'Sampel Berisik (Keramaian / Jalanan)',
       filename: 'contoh-berisik.mp3',
       url: '/samples/contoh-berisik.mp3',
       expected: 'berisik'
     },
     {
       id: 'non-berisik-1',
-      title: 'Contoh Sepi (Kantor / Perpustakaan)',
+      title: 'Sampel Non-Berisik (Ruang Tenang / Belajar)',
       filename: 'contoh-non-berisik.mp3',
       url: '/samples/contoh-non-berisik.mp3',
       expected: 'non-berisik'
     },
     {
       id: 'tidak-jelas-1',
-      title: 'Contoh Transisi / Kasus Uji',
+      title: 'Sampel Uji Ambigu / Transisi',
       filename: 'contoh-tidak-jelas.mp3',
       url: '/samples/contoh-tidak-jelas.mp3',
       expected: 'berisik'

@@ -1,7 +1,7 @@
 @import './styles/tokens.css';
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 #root {
@@ -12,123 +12,100 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  background-color: var(--bg-canvas);
 }
 
-/* Base Headings */
+/* Base Headings: Clean, Heavy, Confident Grotesque Hierarchy */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 750;
   color: var(--text-primary);
-  line-height: 1.25;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
-/* Gradient Text Utilities (Luminous Lime to Emerald Aurora) */
-.text-gradient-teal {
-  background: linear-gradient(135deg, #ECFCCB 0%, #BEF264 30%, #4ADE80 70%, #10B981 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.text-accent {
+  color: var(--accent-orange);
 }
 
-.text-gradient-lime {
-  background: linear-gradient(135deg, #F7FEE7 0%, #D9F99D 40%, #4ADE80 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.text-gradient-amber {
-  background: linear-gradient(135deg, #FEF08A 0%, #F59E0B 50%, #EA580C 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* Glassmorphism Card Style with Smooth Hover Animation */
+/* Crisp Matte White Cards with Soft Shadows */
 .glass-card {
-  background: var(--bg-surface);
-  backdrop-filter: var(--glass-backdrop);
-  -webkit-backdrop-filter: var(--glass-backdrop);
-  border: var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
   border-radius: var(--radius-lg);
-  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 250ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .glass-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(74, 222, 128, 0.45);
-  box-shadow: 0 16px 36px -8px rgba(16, 185, 129, 0.22), 0 0 20px 0 rgba(74, 222, 128, 0.12);
-}
-
-.glass-card-hover {
-  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 250ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.glass-card-hover:hover {
-  transform: translateY(-4px);
   border-color: var(--border-active);
-  box-shadow: 0 16px 38px -8px rgba(16, 185, 129, 0.30), 0 0 24px 0 rgba(132, 204, 22, 0.18);
+  box-shadow: var(--shadow-md);
 }
 
-/* Interactive Button & Link Micro-Interactions */
+/* Contrast Deep Sage Card (Exact Match with Windpo Equalizer Card) */
+.card-sage {
+  background-color: var(--bg-surface-sage);
+  color: var(--text-on-dark);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.card-sage:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: var(--shadow-md);
+}
+
+/* Full Edge-to-Edge Industrial Dashboard Shell */
+.app-shell {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-canvas);
+  box-sizing: border-box;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 24px 32px 56px;
+  box-sizing: border-box;
+}
+
+/* Backwards compatibility */
+.kiosk-shell {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Deliberate Micro-Interactions (No Bouncy Scales or Glowing Flares) */
 button {
   cursor: pointer;
   border: none;
   background: none;
-  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
-              background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
-              filter 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 150ms ease, border-color 150ms ease, opacity 150ms ease;
 }
 
 button:hover:not(:disabled) {
-  transform: scale(1.02);
-  filter: brightness(1.08);
+  opacity: 0.92;
 }
 
 button:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: translateY(1px);
 }
 
-nav a {
-  transition: all 220ms cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-nav a:hover {
-  transform: scale(1.03);
-  box-shadow: 0 0 16px rgba(74, 222, 128, 0.35) !important;
-}
-
-nav a:active {
-  transform: scale(0.97);
-}
-
-/* Pulsing Status Dot */
+/* Clean, Steady Status Indicator (No Distracting Infinite Pulse) */
 .pulse-indicator {
   position: relative;
   display: inline-flex;
 }
 
-.pulse-indicator::before {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  background-color: currentColor;
-  opacity: 0.45;
-  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 0.8; }
-  50% { transform: scale(1.6); opacity: 0; }
-  100% { transform: scale(0.8); opacity: 0; }
-}
-
-/* Smooth Spinner */
+/* Smooth Spinner for Realtime Workflows */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }

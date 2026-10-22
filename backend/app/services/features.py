@@ -1,35 +1,50 @@
-﻿import librosa
+import librosa
 import numpy as np
 import pandas as pd
 
 FEATURE_NAMES = [
-    'rms_mean', 'mfcc1_mean', 'rms_std', 'mfcc3_mean', 'zcr_mean',
-    'mfcc6_mean', 'mfcc7_mean', 'mfcc13_mean', 'mfcc5_mean', 'centroid_mean'
+    'rms_mean', 'rms_std', 'mfcc1_mean', 'mfcc3_mean', 'mfcc5_mean',
+    'mfcc13_mean', 'mfcc6_mean', 'centroid_mean', 'mfcc7_mean', 'zcr_mean',
+    'mfcc8_mean', 'mfcc11_mean', 'mfcc10_mean', 'mfcc9_mean'
 ]
 
 DISPLAY_NAMES = {
     'rms_mean': 'Volume Rata-rata',
-    'mfcc1_mean': 'Bentuk Spektral Utama (MFCC 1)',
     'rms_std': 'Variasi Volume (Dinamika)',
+    'mfcc1_mean': 'Bentuk Spektral Utama (MFCC 1)',
+    'mfcc2_mean': 'Timbre MFCC 2',
     'mfcc3_mean': 'Timbre MFCC 3',
-    'zcr_mean': 'Zero Crossing Rate (Desis)',
+    'mfcc4_mean': 'Timbre MFCC 4',
+    'mfcc5_mean': 'Timbre MFCC 5',
     'mfcc6_mean': 'Timbre MFCC 6',
     'mfcc7_mean': 'Timbre MFCC 7',
+    'mfcc8_mean': 'Timbre MFCC 8',
+    'mfcc9_mean': 'Timbre MFCC 9',
+    'mfcc10_mean': 'Timbre MFCC 10',
+    'mfcc11_mean': 'Timbre MFCC 11',
+    'mfcc12_mean': 'Timbre MFCC 12',
     'mfcc13_mean': 'Timbre MFCC 13',
-    'mfcc5_mean': 'Timbre MFCC 5',
+    'zcr_mean': 'Zero Crossing Rate (Desis)',
     'centroid_mean': 'Pusat Frekuensi (Kecerahan)'
 }
 
 UNITS = {
     'rms_mean': '',
-    'mfcc1_mean': '',
     'rms_std': '',
+    'mfcc1_mean': '',
+    'mfcc2_mean': '',
     'mfcc3_mean': '',
-    'zcr_mean': '',
+    'mfcc4_mean': '',
+    'mfcc5_mean': '',
     'mfcc6_mean': '',
     'mfcc7_mean': '',
+    'mfcc8_mean': '',
+    'mfcc9_mean': '',
+    'mfcc10_mean': '',
+    'mfcc11_mean': '',
+    'mfcc12_mean': '',
     'mfcc13_mean': '',
-    'mfcc5_mean': '',
+    'zcr_mean': '',
     'centroid_mean': 'Hz'
 }
 
@@ -58,16 +73,12 @@ def extract_features(y_clean: np.ndarray, sr: int = 22050, chunk_dur: int = 3):
         # Per chunk feature dictionary (for chunk-level prediction)
         ch_dict = {
             'rms_mean': float(np.mean(ch_rms)),
-            'mfcc1_mean': float(np.mean(ch_mfcc[0, :])),
             'rms_std': float(np.std(ch_rms, ddof=0)),
-            'mfcc3_mean': float(np.mean(ch_mfcc[2, :])),
-            'zcr_mean': float(np.mean(ch_zcr)),
-            'mfcc6_mean': float(np.mean(ch_mfcc[5, :])),
-            'mfcc7_mean': float(np.mean(ch_mfcc[6, :])),
-            'mfcc13_mean': float(np.mean(ch_mfcc[12, :])),
-            'mfcc5_mean': float(np.mean(ch_mfcc[4, :])),
-            'centroid_mean': float(np.mean(ch_cent))
+            'centroid_mean': float(np.mean(ch_cent)),
+            'zcr_mean': float(np.mean(ch_zcr))
         }
+        for k in range(13):
+            ch_dict[f'mfcc{k+1}_mean'] = float(np.mean(ch_mfcc[k, :]))
         chunk_features_list.append(ch_dict)
 
     cat_rms = np.hstack(rms_list)
@@ -75,19 +86,15 @@ def extract_features(y_clean: np.ndarray, sr: int = 22050, chunk_dur: int = 3):
     cat_zcr = np.hstack(zcr_list)
     cat_mfcc = np.hstack(mfcc_list)
 
-    # 10 Selected Features matching model training exact order
+    # All features matching retrained model
     feature_dict = {
         'rms_mean': float(np.mean(cat_rms)),
-        'mfcc1_mean': float(np.mean(cat_mfcc[0, :])),
         'rms_std': float(np.std(cat_rms, ddof=0)),
-        'mfcc3_mean': float(np.mean(cat_mfcc[2, :])),
-        'zcr_mean': float(np.mean(cat_zcr)),
-        'mfcc6_mean': float(np.mean(cat_mfcc[5, :])),
-        'mfcc7_mean': float(np.mean(cat_mfcc[6, :])),
-        'mfcc13_mean': float(np.mean(cat_mfcc[12, :])),
-        'mfcc5_mean': float(np.mean(cat_mfcc[4, :])),
-        'centroid_mean': float(np.mean(cat_cent))
+        'centroid_mean': float(np.mean(cat_cent)),
+        'zcr_mean': float(np.mean(cat_zcr))
     }
+    for k in range(13):
+        feature_dict[f'mfcc{k+1}_mean'] = float(np.mean(cat_mfcc[k, :]))
 
     # All 13 MFCC means for profile visualization
     mfcc_13_profile = [float(np.mean(cat_mfcc[k, :])) for k in range(13)]

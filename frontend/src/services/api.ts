@@ -77,7 +77,7 @@ export async function predictAudioFile(
     if (err instanceof ApiError) {
       throw err;
     }
-    throw new ApiError(500, 'KONEKSI_GAGAL', 'Tidak dapat terhubung ke server backend Sound Lab. Pastikan server aktif di port 8080.');
+    throw new ApiError(500, 'KONEKSI_GAGAL', 'Tidak dapat terhubung ke server backend Sonalyze. Pastikan server aktif di port 8080.');
   }
 }
 

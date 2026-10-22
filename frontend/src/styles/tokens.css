@@ -1,62 +1,67 @@
 :root {
   /* Fonts */
-  --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  /* Lush Emerald & Luminous Lime Aurora Palette (Matching Wallpaper) */
-  --bg-canvas: #031D16;
-  --bg-forest-deep: #021711;
-  --bg-forest-mid: #052F24;
-  --bg-surface: rgba(4, 38, 29, 0.72);
-  --bg-surface-elevated: rgba(6, 52, 40, 0.82);
-  --bg-surface-subtle: rgba(3, 27, 20, 0.62);
-  
-  --border-subtle: rgba(74, 222, 128, 0.20);
-  --border-active: rgba(132, 204, 22, 0.45);
-  --border-focus: #4ADE80;
+  /* Nordic Industrial Palette (Adapted from Windpo Hardware Reference) */
+  --bg-viewport: #E8ECE6;           /* Unified Canvas Viewport */
+  --bg-canvas: #E8ECE6;             /* Pale Mist Canvas Background */
+  --bg-surface: #FFFFFF;            /* Pure Crisp Matte White Cards */
+  --bg-surface-elevated: #F4F6F3;   /* Secondary Soft White / Tinted Mist */
+  --bg-surface-sage: #616A5C;       /* Contrast Deep Sage Card (Equalizer) */
+  --bg-surface-subtle: #DEE4DC;     /* Inset / Subtle Track Background */
 
-  --text-primary: #F0FDF4;
-  --text-secondary: #BBF7D0;
-  --text-muted: #86EFAC;
-  --text-slate: #94A3B8;
+  --border-subtle: rgba(0, 0, 0, 0.07);
+  --border-active: rgba(0, 0, 0, 0.14);
+  --border-focus: #FF5C26;
 
-  /* Class & Semantic Accents (Harmonized with Dark Emerald Green) */
-  --accent-quiet: #4ADE80;
-  --accent-quiet-emerald: #10B981;
-  --accent-quiet-lime: #84CC16;
-  --accent-quiet-bright: #A3E635;
-  --accent-quiet-bg: rgba(74, 222, 128, 0.12);
-  --accent-quiet-border: rgba(74, 222, 128, 0.35);
+  /* Typography Colors: Charcoal & Slate (No harsh pure black) */
+  --text-primary: #181F26;          /* Deep Industrial Charcoal */
+  --text-secondary: #556070;        /* Refined Slate Grey */
+  --text-muted: #8492A6;            /* Soft Muted Grey */
+  --text-on-dark: #FFFFFF;          /* Pure White on Sage Cards */
+  --text-on-dark-subtle: #CBD5E1;   /* Soft Muted on Sage Cards */
 
-  --accent-noisy: #FBBF24;
-  --accent-noisy-amber: #F59E0B;
-  --accent-noisy-bg: rgba(6, 52, 40, 0.75);
-  --accent-noisy-border: rgba(245, 158, 11, 0.35);
+  /* Primary Industrial Safety Orange (Exact Match with Reference Accent) */
+  --accent-orange: #FF5C26;
+  --accent-orange-hover: #E84D19;
+  --accent-orange-light: rgba(255, 92, 38, 0.12);
 
-  --accent-neutral: #84CC16;
-  --accent-neutral-bg: rgba(132, 204, 22, 0.14);
+  /* Functional Status Accents */
+  --accent-quiet: #10B981;          /* Normal / Safe Zone (Emerald) */
+  --accent-quiet-bg: rgba(16, 185, 129, 0.1);
+  --accent-quiet-border: rgba(16, 185, 129, 0.3);
 
-  --accent-warning: #FCD34D;
-  --accent-warning-bg: rgba(6, 52, 40, 0.75);
-  --accent-warning-border: rgba(245, 158, 11, 0.35);
+  --accent-lime: #D4ED31;           /* Bright Chartreuse for Equalizer */
+  --accent-teal: #7CC5C2;           /* Sensor Bar Teal */
+  --accent-coral: #F87146;          /* Sensor Bar Coral */
 
-  --accent-danger: #FDA4AF;
-  --accent-danger-coral: #FB7185;
-  --accent-danger-bg: rgba(6, 52, 40, 0.80);
-  --accent-danger-border: rgba(244, 63, 94, 0.38);
+  --accent-warning: #F59E0B;
+  --accent-warning-bg: rgba(245, 158, 11, 0.1);
+  --accent-warning-border: rgba(245, 158, 11, 0.3);
 
-  /* Glassmorphism & Elevation */
-  --glass-bg: rgba(4, 38, 29, 0.72);
-  --glass-backdrop: blur(18px);
-  --glass-border: 1px solid rgba(74, 222, 128, 0.22);
-  --glass-shadow: 0 10px 35px 0 rgba(1, 20, 14, 0.55);
+  --accent-danger: #EF4444;
+  --accent-danger-bg: rgba(239, 68, 68, 0.1);
+  --accent-danger-border: rgba(239, 68, 68, 0.3);
+
+  /* Elevation Shadows: Ultra-Soft Natural Shadows */
+  --glass-bg: #FFFFFF;
+  --glass-border: 1px solid rgba(0, 0, 0, 0.06);
+  --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.08);
+  --shadow-kiosk: 0 24px 64px -12px rgba(0, 0, 0, 0.22);
 
   /* Geometry */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-kiosk: 28px;
+  --radius-pill: 9999px;
 }
 
 *, *::before, *::after {
@@ -67,15 +72,10 @@
 
 body {
   background-color: var(--bg-canvas);
-  background-image: 
-    radial-gradient(ellipse 65% 55% at 85% 15%, rgba(190, 242, 100, 0.28) 0%, rgba(132, 204, 22, 0.15) 35%, transparent 70%),
-    radial-gradient(ellipse 70% 60% at 30% 65%, rgba(34, 197, 94, 0.22) 0%, rgba(21, 128, 61, 0.12) 45%, transparent 75%),
-    radial-gradient(ellipse 90% 70% at 10% 95%, rgba(4, 46, 35, 0.95) 0%, transparent 80%),
-    linear-gradient(170deg, #06281E 0%, #031D16 50%, #01140E 100%);
-  background-attachment: fixed;
+  background-image: none;
   color: var(--text-primary);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -84,7 +84,7 @@ body {
 
 /* Accessibility Focus Ring */
 :focus-visible {
-  outline: 2px solid var(--border-focus);
+  outline: 2px solid var(--accent-orange);
   outline-offset: 2px;
 }
 
@@ -105,6 +105,11 @@ a {
   text-decoration: none;
 }
 
+/* Tabular numbers for clean acoustic data & metrics */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
@@ -114,9 +119,9 @@ a {
   background: var(--bg-canvas);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(74, 222, 128, 0.28);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(132, 204, 22, 0.50);
+  background: rgba(0, 0, 0, 0.28);
 }

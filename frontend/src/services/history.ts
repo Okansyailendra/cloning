@@ -65,16 +65,20 @@ export function createLiveSessionHistoryItem(params: {
   const filename = `Sesi Real-Time (${timeStr})`;
 
   const featureItems = [
-    { rank: 1, name: 'rms_mean', display_name: 'Volume Rata-rata (RMS)', unit: '', value: parseFloat(avgRms.toFixed(4)), class_mean: { berisik: 0.0824, 'non-berisik': 0.0152 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.28 },
-    { rank: 2, name: 'mfcc1_mean', display_name: 'Koefisien Spektral MFCC 1', unit: 'dB', value: parseFloat((-210.0 + avgRms * 350).toFixed(2)), class_mean: { berisik: -185.3, 'non-berisik': -340.2 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.22 },
-    { rank: 3, name: 'rms_std', display_name: 'Fluktuasi Dinamika RMS', unit: '', value: parseFloat(Math.max(0.005, (peakRms - avgRms) * 0.7).toFixed(4)), class_mean: { berisik: 0.0385, 'non-berisik': 0.0076 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.14 },
-    { rank: 4, name: 'mfcc3_mean', display_name: 'Koefisien Spektral MFCC 3', unit: 'dB', value: -16.4, class_mean: { berisik: -12.1, 'non-berisik': -28.4 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.09 },
-    { rank: 5, name: 'zcr_mean', display_name: 'Kerapatan Desis (ZCR)', unit: '', value: parseFloat(zcr.toFixed(4)), class_mean: { berisik: 0.0942, 'non-berisik': 0.0418 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.08 },
-    { rank: 6, name: 'mfcc6_mean', display_name: 'Koefisien Spektral MFCC 6', unit: 'dB', value: -7.2, class_mean: { berisik: -5.4, 'non-berisik': -14.2 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.05 },
-    { rank: 7, name: 'mfcc7_mean', display_name: 'Koefisien Spektral MFCC 7', unit: 'dB', value: -8.8, class_mean: { berisik: -6.9, 'non-berisik': -15.8 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.05 },
-    { rank: 8, name: 'mfcc13_mean', display_name: 'Koefisien Spektral MFCC 13', unit: 'dB', value: -4.5, class_mean: { berisik: -3.8, 'non-berisik': -10.1 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.04 },
-    { rank: 9, name: 'mfcc5_mean', display_name: 'Koefisien Spektral MFCC 5', unit: 'dB', value: -10.2, class_mean: { berisik: -8.7, 'non-berisik': -18.3 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.03 },
-    { rank: 10, name: 'centroid_mean', display_name: 'Pusat Massa Frekuensi Spektral', unit: 'Hz', value: parseFloat(centroid_hz.toFixed(1)), class_mean: { berisik: 1820.5, 'non-berisik': 1140.2 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.02 }
+    { rank: 1, name: 'rms_mean', display_name: 'Volume Rata-rata (RMS)', unit: '', value: parseFloat(avgRms.toFixed(4)), class_mean: { berisik: 0.0955, 'non-berisik': 0.0352 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.1992 },
+    { rank: 2, name: 'rms_std', display_name: 'Fluktuasi Dinamika RMS', unit: '', value: parseFloat(Math.max(0.005, (peakRms - avgRms) * 0.7).toFixed(4)), class_mean: { berisik: 0.0479, 'non-berisik': 0.0208 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.1071 },
+    { rank: 3, name: 'mfcc3_mean', display_name: 'Timbre MFCC 3', unit: 'dB', value: isNoisy ? -32.5 : -12.0, class_mean: { berisik: -34.84, 'non-berisik': -11.17 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0874 },
+    { rank: 4, name: 'mfcc1_mean', display_name: 'Bentuk Spektral Utama (MFCC 1)', unit: 'dB', value: parseFloat((-260.0 + avgRms * 350).toFixed(2)), class_mean: { berisik: -200.82, 'non-berisik': -320.70 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0827 },
+    { rank: 5, name: 'mfcc5_mean', display_name: 'Timbre MFCC 5', unit: 'dB', value: isNoisy ? -18.0 : -5.0, class_mean: { berisik: -18.82, 'non-berisik': -4.77 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0797 },
+    { rank: 6, name: 'mfcc7_mean', display_name: 'Timbre MFCC 7', unit: 'dB', value: isNoisy ? -13.0 : -8.5, class_mean: { berisik: -13.28, 'non-berisik': -8.37 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0573 },
+    { rank: 7, name: 'mfcc11_mean', display_name: 'Timbre MFCC 11', unit: 'dB', value: isNoisy ? -7.5 : -4.8, class_mean: { berisik: -7.77, 'non-berisik': -4.76 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0547 },
+    { rank: 8, name: 'zcr_mean', display_name: 'Zero Crossing Rate (Desis)', unit: '', value: parseFloat(zcr.toFixed(4)), class_mean: { berisik: 0.0940, 'non-berisik': 0.0748 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0520 },
+    { rank: 9, name: 'centroid_mean', display_name: 'Pusat Frekuensi Spektral', unit: 'Hz', value: parseFloat(centroid_hz.toFixed(1)), class_mean: { berisik: 1784.2, 'non-berisik': 1619.7 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0496 },
+    { rank: 10, name: 'mfcc13_mean', display_name: 'Timbre MFCC 13', unit: 'dB', value: isNoisy ? -7.8 : -4.3, class_mean: { berisik: -7.78, 'non-berisik': -4.26 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0494 },
+    { rank: 11, name: 'mfcc10_mean', display_name: 'Timbre MFCC 10', unit: 'dB', value: isNoisy ? -1.9 : -1.1, class_mean: { berisik: -1.88, 'non-berisik': -1.09 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0479 },
+    { rank: 12, name: 'mfcc8_mean', display_name: 'Timbre MFCC 8', unit: 'dB', value: isNoisy ? -11.0 : -4.3, class_mean: { berisik: -11.38, 'non-berisik': -4.27 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0460 },
+    { rank: 13, name: 'mfcc6_mean', display_name: 'Timbre MFCC 6', unit: 'dB', value: isNoisy ? -9.2 : -1.4, class_mean: { berisik: -9.41, 'non-berisik': -1.32 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0452 },
+    { rank: 14, name: 'mfcc9_mean', display_name: 'Timbre MFCC 9', unit: 'dB', value: isNoisy ? -12.1 : -8.1, class_mean: { berisik: -12.21, 'non-berisik': -8.05 }, nearer_class: isNoisy ? 'berisik' as const : 'non-berisik' as const, importance: 0.0417 }
   ];
 
   const fullResponse: any = {
@@ -164,7 +168,7 @@ export function exportHistoryToCsv(items: HistoryItem[]): void {
   
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `soundlab-riwayat-${new Date().toISOString().slice(0,10)}.csv`);
+  link.setAttribute('download', `sonalyze-riwayat-${new Date().toISOString().slice(0,10)}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

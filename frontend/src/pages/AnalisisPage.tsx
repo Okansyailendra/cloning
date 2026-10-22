@@ -16,7 +16,6 @@ import type { PredictResponse } from '../types/api';
 import { Radio, FolderOpen, Loader2, RefreshCw } from 'lucide-react';
 
 export const AnalisisPage: React.FC = () => {
-
   // Main view mode: 'realtime' (default) vs 'file'
   const [viewMode, setViewMode] = useState<'realtime' | 'file'>('realtime');
   const [fileTab, setFileTab] = useState<'upload' | 'sample'>('upload');
@@ -86,14 +85,14 @@ export const AnalisisPage: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* ============================================================== */}
-      {/* MODE 1: DETEKSI REAL-TIME (Default Integrated Split Hero Workspace) */}
+      {/* MODE 1: DETEKSI REAL-TIME (Default Integrated Split Workspace)  */}
       {/* ============================================================== */}
       {viewMode === 'realtime' && (
         <RealtimeMonitor viewMode={viewMode} onSwitchMode={setViewMode} />
       )}
 
       {/* ============================================================== */}
-      {/* MODE 2: ANALISIS BERKAS / SAMPEL (Split Hero + Results)       */}
+      {/* MODE 2: ANALISIS BERKAS / SAMPEL                               */}
       {/* ============================================================== */}
       {viewMode === 'file' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -106,21 +105,20 @@ export const AnalisisPage: React.FC = () => {
             <div className="glass-card" style={{
               width: '100%',
               maxWidth: '920px',
-              padding: '26px 28px',
+              padding: '24px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              gap: '20px',
-              border: '1px solid rgba(74, 222, 128, 0.25)'
+              gap: '20px'
             }}>
               {/* Mode Switcher */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div style={{
                   display: 'flex',
-                  backgroundColor: 'rgba(3, 29, 22, 0.85)',
+                  backgroundColor: 'var(--bg-surface-elevated)',
                   padding: '4px',
                   borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(74, 222, 128, 0.2)',
+                  border: '1px solid var(--border-subtle)',
                   gap: '4px'
                 }}>
                   <button
@@ -132,9 +130,9 @@ export const AnalisisPage: React.FC = () => {
                       padding: '6px 14px',
                       borderRadius: 'var(--radius-sm)',
                       fontSize: '12px',
-                      fontWeight: 600,
+                      fontWeight: 500,
                       backgroundColor: 'transparent',
-                      color: '#94A3B8'
+                      color: 'var(--text-secondary)'
                     }}
                   >
                     <Radio size={14} />
@@ -151,8 +149,9 @@ export const AnalisisPage: React.FC = () => {
                       borderRadius: 'var(--radius-sm)',
                       fontSize: '12px',
                       fontWeight: 600,
-                      backgroundColor: '#4ADE80',
-                      color: '#021711'
+                      backgroundColor: 'var(--bg-surface)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-active)'
                     }}
                   >
                     <FolderOpen size={14} />
@@ -167,16 +166,16 @@ export const AnalisisPage: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      padding: '7px 14px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'rgba(4, 38, 29, 0.75)',
-                      border: '1px solid rgba(74, 222, 128, 0.25)',
+                      padding: '6px 14px',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: 'var(--bg-surface-elevated)',
+                      border: '1px solid var(--border-subtle)',
                       fontSize: '12px',
                       fontWeight: 600,
-                      color: '#4ADE80'
+                      color: 'var(--text-primary)'
                     }}
                   >
-                    <RefreshCw size={14} />
+                    <RefreshCw size={13} />
                     <span>Analisis Ulang</span>
                   </button>
                 )}
@@ -186,19 +185,19 @@ export const AnalisisPage: React.FC = () => {
               <div style={{
                 display: 'flex',
                 gap: '8px',
-                borderBottom: '1px solid rgba(74, 222, 128, 0.18)',
+                borderBottom: '1px solid var(--border-subtle)',
                 paddingBottom: '10px'
               }}>
                 <button
                   onClick={() => setFileTab('upload')}
                   style={{
-                    padding: '8px 16px',
+                    padding: '6px 14px',
                     borderRadius: 'var(--radius-sm)',
                     fontSize: '13px',
-                    fontWeight: fileTab === 'upload' ? 700 : 500,
-                    backgroundColor: fileTab === 'upload' ? 'rgba(74, 222, 128, 0.2)' : 'transparent',
-                    color: fileTab === 'upload' ? '#F0FDFA' : '#94A3B8',
-                    border: `1px solid ${fileTab === 'upload' ? 'rgba(74, 222, 128, 0.4)' : 'transparent'}`
+                    fontWeight: fileTab === 'upload' ? 600 : 500,
+                    backgroundColor: fileTab === 'upload' ? 'var(--bg-surface-elevated)' : 'transparent',
+                    color: fileTab === 'upload' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    border: `1px solid ${fileTab === 'upload' ? 'var(--border-active)' : 'transparent'}`
                   }}
                 >
                   Unggah Berkas Audio
@@ -206,13 +205,13 @@ export const AnalisisPage: React.FC = () => {
                 <button
                   onClick={() => setFileTab('sample')}
                   style={{
-                    padding: '8px 16px',
+                    padding: '6px 14px',
                     borderRadius: 'var(--radius-sm)',
                     fontSize: '13px',
-                    fontWeight: fileTab === 'sample' ? 700 : 500,
-                    backgroundColor: fileTab === 'sample' ? 'rgba(74, 222, 128, 0.2)' : 'transparent',
-                    color: fileTab === 'sample' ? '#F0FDFA' : '#94A3B8',
-                    border: `1px solid ${fileTab === 'sample' ? 'rgba(74, 222, 128, 0.4)' : 'transparent'}`
+                    fontWeight: fileTab === 'sample' ? 600 : 500,
+                    backgroundColor: fileTab === 'sample' ? 'var(--bg-surface-elevated)' : 'transparent',
+                    color: fileTab === 'sample' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    border: `1px solid ${fileTab === 'sample' ? 'var(--border-active)' : 'transparent'}`
                   }}
                 >
                   Coba Contoh Sampel
@@ -241,11 +240,11 @@ export const AnalisisPage: React.FC = () => {
               gap: '14px',
               textAlign: 'center'
             }}>
-              <Loader2 size={36} className="animate-spin" style={{ color: '#4ADE80' }} />
-              <div style={{ fontWeight: 700, fontSize: '16px', color: '#F0FDFA' }}>
-                Mengekstraksi 10 Fitur Audio Spektral & Menjalankan Model...
+              <Loader2 size={32} className="animate-spin" style={{ color: 'var(--accent-quiet)' }} />
+              <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--text-primary)' }}>
+                Mengekstraksi Fitur Audio Spektral & Menjalankan Model...
               </div>
-              <p style={{ fontSize: '13px', color: '#94A3B8' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                 Memotong bagian hening (top_db=25), menghitung RMS, MFCC 1-13, dan Spectral Centroid.
               </p>
             </div>
@@ -254,12 +253,12 @@ export const AnalisisPage: React.FC = () => {
           {/* Error Message */}
           {errorMsg && (
             <div style={{
-              padding: '16px 20px',
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.35)',
+              padding: '14px 18px',
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
               borderRadius: 'var(--radius-md)',
               color: '#EF4444',
-              fontSize: '14px'
+              fontSize: '13px'
             }}>
               {errorMsg}
             </div>
@@ -290,7 +289,7 @@ export const AnalisisPage: React.FC = () => {
                 activeIntervals={result.audio.active_intervals}
                 currentTime={currentTime}
                 onSeek={(t) => setSeekTarget(t)}
-                accentColor={result.prediction.label === 'berisik' ? '#F97316' : '#4ADE80'}
+                accentColor={result.prediction.label === 'berisik' ? '#EF4444' : '#10B981'}
               />
 
               <SpectrogramCanvas

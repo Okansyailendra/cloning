@@ -36,9 +36,10 @@ async def lifespan(app: FastAPI):
         d_zcr = librosa.feature.zero_crossing_rate(y=dummy_y)
         d_mfcc = librosa.feature.mfcc(y=dummy_y, sr=22050, n_mfcc=13)
         dummy_feat = {
-            'rms_mean': 0.05, 'mfcc1_mean': -250.0, 'rms_std': 0.03, 'mfcc3_mean': -20.0,
-            'zcr_mean': 0.08, 'mfcc6_mean': -5.0, 'mfcc7_mean': -10.0, 'mfcc13_mean': -5.0,
-            'mfcc5_mean': -10.0, 'centroid_mean': 1700.0
+            'rms_mean': 0.05, 'rms_std': 0.03, 'mfcc1_mean': -250.0, 'mfcc3_mean': -20.0,
+            'mfcc5_mean': -10.0, 'mfcc13_mean': -5.0, 'mfcc6_mean': -5.0, 'centroid_mean': 1700.0,
+            'mfcc7_mean': -10.0, 'zcr_mean': 0.08, 'mfcc8_mean': -10.0, 'mfcc11_mean': -5.0,
+            'mfcc10_mean': -2.0, 'mfcc9_mean': -10.0
         }
         if app.state.predictor and app.state.predictor.model:
             app.state.predictor.predict(dummy_feat)
@@ -48,8 +49,8 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(
-    title="Sound Lab API",
-    description="Klasifikasi Audio Kebisingan Lingkungan Kerja",
+    title="Sonalyze API",
+    description="Klasifikasi Audio Kebisingan — Proyek Sains Data",
     version="1.0.0",
     lifespan=lifespan
 )

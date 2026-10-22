@@ -19,7 +19,7 @@ export const FeatureTable: React.FC<FeatureTableProps> = ({ features }) => {
     }}>
       <div>
         <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
-          Tabel 10 Fitur Audio (Data Teknis Model)
+          Tabel {features.length} Fitur Audio (Data Teknis Model)
         </h3>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
           Urutan fitur sesuai arsitektur Random Forest dengan bobot kepentingan (MDI).

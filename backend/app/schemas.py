@@ -119,3 +119,6 @@ class LivePredictResponse(BaseModel):
     zcr: float
     low_confidence: bool
     status_text: str
+    mfcc1: Optional[float] = None
+    mfcc3: Optional[float] = None
+    rms_std: Optional[float] = None

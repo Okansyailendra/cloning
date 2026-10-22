@@ -1,60 +1,42 @@
 import React from 'react';
-import { ShieldAlert, AlertTriangle, Cpu, Lock, FileCheck } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, Cpu, Lock } from 'lucide-react';
 
 export const BatasanEtikaPage: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', paddingBottom: '40px' }}>
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-          <span style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '4px 10px',
-            borderRadius: '9999px',
-            backgroundColor: 'rgba(74, 222, 128, 0.12)',
-            border: '1px solid rgba(74, 222, 128, 0.35)',
-            fontSize: '11px',
-            fontWeight: 700,
-            color: '#4ADE80',
-            fontFamily: 'var(--font-mono)'
-          }}>
-            <FileCheck size={13} />
-            TRANSPARANSI AKADEMIK & ETIKA
-          </span>
-        </div>
         <h1 style={{
-          fontSize: '32px',
-          fontWeight: 800,
+          fontSize: '28px',
+          fontWeight: 700,
           letterSpacing: '-0.02em',
-          marginBottom: '4px'
+          color: 'var(--text-primary)',
+          marginBottom: '6px'
         }}>
-          Batasan Sistem, <span className="text-gradient-lime">Kalibrasi & Etika Penggunaan</span>
+          Batasan Sistem, Kalibrasi & Etika Penggunaan
         </h1>
-        <p style={{ color: '#94A3B8', fontSize: '14px' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', maxWidth: '800px' }}>
           Panduan transparansi akademik, batasan distribusi data suara, variasi perangkat keras mikrofon, serta perlindungan privasi pengguna.
         </p>
       </div>
 
-      {/* Academic Disclaimer Box - Harmonized Dark Emerald with Soft Amber Accent */}
+      {/* Academic Disclaimer Callout: Solid Amber Contrast */}
       <div className="glass-card" style={{
-        backgroundColor: 'rgba(6, 44, 34, 0.75)',
-        border: '1px solid rgba(251, 191, 36, 0.35)',
-        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(251, 191, 36, 0.05)',
+        backgroundColor: 'rgba(245, 158, 11, 0.05)',
+        border: '1px solid rgba(245, 158, 11, 0.25)',
         padding: '24px',
         display: 'flex',
         alignItems: 'flex-start',
         gap: '16px'
       }}>
-        <AlertTriangle size={26} color="#FBBF24" style={{ flexShrink: 0, marginTop: '2px' }} />
+        <AlertTriangle size={24} color="#F59E0B" style={{ flexShrink: 0, marginTop: '2px' }} />
         <div>
-          <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#FEF08A', marginBottom: '6px' }}>
-            Bukan Alat Sertifikasi Legal K3 / Regulasi Resmi
+          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#B45309', marginBottom: '6px' }}>
+            Purwarupa Akademik Proyek Sains Data (Bukan Alat Ukur Formal)
           </h2>
-          <p style={{ fontSize: '14px', color: '#E2E8F0', lineHeight: 1.6 }}>
-            Sound Lab dikembangkan sebagai purwarupa penelitian sistem cerdas klasifikasi audio lingkungan kerja.
-            Aplikasi ini <strong>tidak menggantikan Sound Level Meter (SLM) terkalibrasi Kelas 1/2 standar IEC 61672</strong> untuk
-            kebutuhan sertifikasi hukum K3, inspeksi resmi ketenagakerjaan, atau uji kepatuhan ambang batas dB(A).
+          <p style={{ fontSize: '13.5px', color: 'var(--text-primary)', lineHeight: 1.6 }}>
+            Sonalyze dikembangkan sebagai luaran tugas mata kuliah Proyek Sains Data (PSD) untuk klasifikasi dan deteksi kebisingan audio menggunakan Random Forest.
+            Aplikasi ini merupakan purwarupa pembelajaran mesin dan <strong>tidak dimaksudkan sebagai pengganti instrumen Sound Level Meter (SLM) tersertifikasi standar IEC 61672</strong> untuk
+            kebutuhan audit formal atau regulasi hukum.
           </p>
         </div>
       </div>
@@ -67,11 +49,11 @@ export const BatasanEtikaPage: React.FC = () => {
           flexDirection: 'column',
           gap: '12px'
         }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Cpu size={20} color="#4ADE80" />
+          <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Cpu size={18} color="var(--accent-quiet)" />
             Sensitivitas Perangkat Keras Mikrofon
           </h2>
-          <p style={{ fontSize: '13px', color: '#94A3B8', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             Mikrofon laptop, webcam, dan ponsel memiliki Automatic Gain Control (AGC) bawaan dan respons frekuensi berbeda.
             Perbedaan sensitivitas ini dapat mempengaruhi nilai RMS (amplitudo). Model dilengkapi normalisasi spektral MFCC
             untuk mengurangi ketergantungan pada kekerasan mutlak sinyal.
@@ -84,13 +66,13 @@ export const BatasanEtikaPage: React.FC = () => {
           flexDirection: 'column',
           gap: '12px'
         }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <ShieldAlert size={20} color="#34D399" />
+          <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <ShieldAlert size={18} color="var(--accent-quiet)" />
             Distribusi Suara (Out-of-Distribution)
           </h2>
-          <p style={{ fontSize: '13px', color: '#94A3B8', lineHeight: 1.6 }}>
-            Model dilatih spesifik pada suara kebisingan pabrik, mesin industri, kantor, dan ruangan sepi.
-            Suara di luar domain ini (seperti musik instrumental, vokal menyanyi, suara hewan, atau hembusan angin langsung ke mikrofon)
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            Model dilatih spesifik pada dataset rekaman suara tugas PSD dengan kategori Berisik (keramaian, jalanan, aktivitas bising) dan Non-Berisik (ruangan hening, suasana tenang).
+            Suara di luar domain ini (seperti musik instrumental murni, instrumen musik akustik tertentu, atau hembusan angin langsung ke mikrofon)
             dapat menghasilkan prediksi dengan tingkat keyakinan rendah (&lt; 65%).
           </p>
         </div>
@@ -101,11 +83,11 @@ export const BatasanEtikaPage: React.FC = () => {
           flexDirection: 'column',
           gap: '12px'
         }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Lock size={20} color="#84CC16" />
+          <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Lock size={18} color="var(--accent-quiet)" />
             Privasi & Pemrosesan Data
           </h2>
-          <p style={{ fontSize: '13px', color: '#94A3B8', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             Rekaman audio yang diunggah diproses secara temporer dalam memori server untuk ekstraksi fitur dan segera dihapus
             setelah respons dikembalikan ke peramban. Sistem <strong>tidak menyimpan rekaman audio pengguna di basis data atau media penyimpanan permanen</strong>.
           </p>

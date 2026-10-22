@@ -17,10 +17,12 @@ from app.services.visuals import generate_visual_data
 router = APIRouter()
 
 IMPORTANCES = {
-    "rms_mean": 0.169, "mfcc1_mean": 0.094, "rms_std": 0.092, "mfcc3_mean": 0.087,
-    "zcr_mean": 0.056, "mfcc6_mean": 0.053, "mfcc7_mean": 0.053, "mfcc13_mean": 0.045,
-    "mfcc5_mean": 0.045, "centroid_mean": 0.044
+    "rms_mean": 0.1992, "rms_std": 0.1071, "mfcc3_mean": 0.0874, "mfcc1_mean": 0.0827,
+    "mfcc5_mean": 0.0797, "mfcc7_mean": 0.0573, "mfcc11_mean": 0.0547, "zcr_mean": 0.0520,
+    "centroid_mean": 0.0496, "mfcc13_mean": 0.0494, "mfcc10_mean": 0.0479, "mfcc8_mean": 0.0460,
+    "mfcc6_mean": 0.0452, "mfcc9_mean": 0.0417
 }
+
 
 @router.post("/predict", response_model=PredictResponse)
 async def predict_audio(request: Request, response: Response, file: UploadFile = File(None)):
@@ -130,7 +132,7 @@ async def predict_audio(request: Request, response: Response, file: UploadFile =
                     "non-berisik": float(round(mu_nb, 4))
                 },
                 "nearer_class": nearer,
-                "importance": IMPORTANCES.get(f_name, 0.05)
+                "importance": float(round(class_means.get("importance", {}).get(f_name, IMPORTANCES.get(f_name, 0.05)), 4))
             })
             
         total_ms = int((time.time() - t0) * 1000)
@@ -224,7 +226,7 @@ async def predict_live_chunk(request: Request, response: Response, file: UploadF
     elif len(y) > target_samples:
         y = y[-target_samples:] # take the most recent 3 seconds
         
-    # Extract 10 features
+    # Extract features matching retrained model
     rms_arr = librosa.feature.rms(y=y)
     cent_arr = librosa.feature.spectral_centroid(y=y, sr=22050)
     zcr_arr = librosa.feature.zero_crossing_rate(y=y)
@@ -232,16 +234,12 @@ async def predict_live_chunk(request: Request, response: Response, file: UploadF
     
     feat_dict = {
         'rms_mean': float(np.mean(rms_arr)),
-        'mfcc1_mean': float(np.mean(mfcc_mat[0, :])),
         'rms_std': float(np.std(rms_arr, ddof=0)),
-        'mfcc3_mean': float(np.mean(mfcc_mat[2, :])),
-        'zcr_mean': float(np.mean(zcr_arr)),
-        'mfcc6_mean': float(np.mean(mfcc_mat[5, :])),
-        'mfcc7_mean': float(np.mean(mfcc_mat[6, :])),
-        'mfcc13_mean': float(np.mean(mfcc_mat[12, :])),
-        'mfcc5_mean': float(np.mean(mfcc_mat[4, :])),
-        'centroid_mean': float(np.mean(cent_arr))
+        'centroid_mean': float(np.mean(cent_arr)),
+        'zcr_mean': float(np.mean(zcr_arr))
     }
+    for k in range(13):
+        feat_dict[f'mfcc{k+1}_mean'] = float(np.mean(mfcc_mat[k, :]))
     
     predictor = getattr(request.app.state, "predictor", None)
     if predictor is None or predictor.model is None:
@@ -279,5 +277,8 @@ async def predict_live_chunk(request: Request, response: Response, file: UploadF
         "centroid_hz": centroid_val,
         "zcr": zcr_val,
         "low_confidence": low_confidence,
-        "status_text": status_text
+        "status_text": status_text,
+        "mfcc1": float(round(feat_dict['mfcc1_mean'], 2)),
+        "mfcc3": float(round(feat_dict['mfcc3_mean'], 2)),
+        "rms_std": float(round(feat_dict['rms_std'], 4))
     }

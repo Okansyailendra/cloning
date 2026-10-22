@@ -16,7 +16,7 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
   activeIntervals,
   currentTime = 0,
   onSeek,
-  accentColor = '#4ADE80'
+  accentColor = '#10B981'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -30,12 +30,12 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
     const height = canvas.height;
     const centerY = height / 2;
 
-    // Clear
-    ctx.fillStyle = '#021A13';
+    // Dark Scientific Canvas Background
+    ctx.fillStyle = '#0B0F17';
     ctx.fillRect(0, 0, width, height);
 
     // Grid center line
-    ctx.strokeStyle = 'rgba(74, 222, 128, 0.18)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, centerY);
@@ -51,7 +51,7 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
       activeIntervals.forEach(([start, end]) => {
         const x1 = (start / duration_s) * width;
         const x2 = (end / duration_s) * width;
-        ctx.fillStyle = 'rgba(74, 222, 128, 0.12)';
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.08)';
         ctx.fillRect(x1, 0, x2 - x1, height);
       });
     }
@@ -77,7 +77,7 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
     // Draw playhead vertical line
     if (duration_s > 0 && currentTime >= 0) {
       const playheadX = Math.min(width, (currentTime / duration_s) * width);
-      ctx.strokeStyle = '#F0FDFA';
+      ctx.strokeStyle = '#F8FAFC';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
@@ -102,10 +102,10 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
       gap: '12px'
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#F0FDFA' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
           Bentuk Gelombang Sinyal (Waveform)
         </h3>
-        <span style={{ fontSize: '11px', color: '#94A3B8', fontFamily: 'var(--font-mono)' }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
           {waveform.points} titik sampel • Klik canvas untuk navigasi audio
         </span>
       </div>
@@ -120,7 +120,7 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
           height: '140px',
           borderRadius: 'var(--radius-md)',
           cursor: onSeek ? 'pointer' : 'default',
-          border: '1px solid rgba(74, 222, 128, 0.25)',
+          border: '1px solid var(--border-subtle)',
           display: 'block'
         }}
       />
