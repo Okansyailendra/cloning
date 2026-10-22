@@ -803,21 +803,6 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
         {/* KOLOM KIRI HERO: JUDUL BESAR, TEKS DESKRIPSI, TICK METER, 3 METRIK */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-              <span style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                color: 'var(--accent-orange)',
-                backgroundColor: 'rgba(251, 91, 42, 0.08)',
-                padding: '3px 10px',
-                borderRadius: 'var(--radius-pill)',
-                border: '1px solid rgba(251, 91, 42, 0.2)'
-              }}>
-                Proyek Sains Data
-              </span>
-            </div>
             <h1 style={{
               fontSize: '38px',
               fontWeight: 800,
