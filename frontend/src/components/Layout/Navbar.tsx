@@ -46,10 +46,10 @@ export const Navbar: React.FC = () => {
       top: 0,
       zIndex: 100,
       width: '100%',
-      backgroundColor: 'rgba(7, 22, 31, 0.85)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      borderBottom: '1px solid rgba(45, 212, 191, 0.18)',
+      backgroundColor: 'rgba(3, 27, 20, 0.82)',
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+      borderBottom: '1px solid rgba(74, 222, 128, 0.20)',
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)'
     }}>
       <div style={{
@@ -68,13 +68,13 @@ export const Navbar: React.FC = () => {
             width: '40px',
             height: '40px',
             borderRadius: 'var(--radius-md)',
-            background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.25) 0%, rgba(6, 182, 212, 0.2) 100%)',
-            border: '1px solid rgba(45, 212, 191, 0.45)',
+            background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.28) 0%, rgba(132, 204, 22, 0.22) 100%)',
+            border: '1px solid rgba(74, 222, 128, 0.45)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#2DD4BF',
-            boxShadow: '0 0 16px rgba(20, 184, 166, 0.3)'
+            color: '#4ADE80',
+            boxShadow: '0 0 16px rgba(74, 222, 128, 0.35)'
           }}>
             <Waves size={22} />
           </div>
@@ -84,7 +84,7 @@ export const Navbar: React.FC = () => {
               fontSize: '20px',
               fontWeight: 800,
               letterSpacing: '-0.02em',
-              background: 'linear-gradient(135deg, #F0FDFA 0%, #2DD4BF 50%, #06B6D4 100%)',
+              background: 'linear-gradient(135deg, #F0FDF4 0%, #D9F99D 45%, #4ADE80 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               lineHeight: 1.1
@@ -93,7 +93,7 @@ export const Navbar: React.FC = () => {
             </span>
             <span style={{
               fontSize: '11px',
-              color: '#5EEAD4',
+              color: '#86EFAC',
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
               fontWeight: 600,
@@ -109,10 +109,10 @@ export const Navbar: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          backgroundColor: 'rgba(11, 34, 48, 0.55)',
+          backgroundColor: 'rgba(4, 38, 29, 0.65)',
           padding: '5px 8px',
           borderRadius: '9999px',
-          border: '1px solid rgba(45, 212, 191, 0.15)'
+          border: '1px solid rgba(74, 222, 128, 0.18)'
         }}>
           {navLinks.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -127,10 +127,10 @@ export const Navbar: React.FC = () => {
                 borderRadius: '9999px',
                 fontSize: '13px',
                 fontWeight: isActive ? 600 : 500,
-                color: isActive ? '#F0FDFA' : '#94A3B8',
-                backgroundColor: isActive ? 'rgba(20, 184, 166, 0.20)' : 'transparent',
-                border: `1px solid ${isActive ? 'rgba(45, 212, 191, 0.40)' : 'transparent'}`,
-                boxShadow: isActive ? '0 0 12px rgba(20, 184, 166, 0.2)' : 'none',
+                color: isActive ? '#F0FDF4' : '#BBF7D0',
+                backgroundColor: isActive ? 'rgba(74, 222, 128, 0.22)' : 'transparent',
+                border: `1px solid ${isActive ? 'rgba(132, 204, 22, 0.45)' : 'transparent'}`,
+                boxShadow: isActive ? '0 0 14px rgba(74, 222, 128, 0.25)' : 'none',
                 transition: 'all 0.15s ease'
               })}
             >
@@ -149,18 +149,18 @@ export const Navbar: React.FC = () => {
             gap: '6px',
             padding: '5px 12px',
             borderRadius: '9999px',
-            backgroundColor: 'rgba(11, 34, 48, 0.75)',
-            border: '1px solid rgba(45, 212, 191, 0.25)',
+            backgroundColor: 'rgba(4, 38, 29, 0.80)',
+            border: '1px solid rgba(74, 222, 128, 0.28)',
             fontSize: '11px',
             fontWeight: 600,
             fontFamily: 'var(--font-mono)',
-            color: '#99F6E4'
+            color: '#BBF7D0'
           }}>
             <span style={{
               width: '6px',
               height: '6px',
               borderRadius: '50%',
-              backgroundColor: '#06B6D4',
+              backgroundColor: '#84CC16',
               display: 'inline-block'
             }} />
             <span>v1.0 • Random Forest</span>
@@ -176,21 +176,21 @@ export const Navbar: React.FC = () => {
               padding: '5px 12px',
               borderRadius: '9999px',
               backgroundColor: serverOnline === true
-                ? 'rgba(16, 185, 129, 0.12)'
+                ? 'rgba(74, 222, 128, 0.14)'
                 : serverOnline === false
                 ? 'rgba(239, 68, 68, 0.15)'
-                : 'rgba(245, 158, 11, 0.12)',
+                : 'rgba(245, 158, 11, 0.14)',
               border: `1px solid ${
                 serverOnline === true
-                  ? 'rgba(16, 185, 129, 0.35)'
+                  ? 'rgba(74, 222, 128, 0.38)'
                   : serverOnline === false
                   ? 'rgba(239, 68, 68, 0.40)'
-                  : 'rgba(245, 158, 11, 0.35)'
+                  : 'rgba(245, 158, 11, 0.38)'
               }`,
               fontSize: '12px',
               fontFamily: 'var(--font-mono)',
               color: serverOnline === true
-                ? '#10B981'
+                ? '#4ADE80'
                 : serverOnline === false
                 ? '#EF4444'
                 : '#F59E0B'
@@ -203,7 +203,7 @@ export const Navbar: React.FC = () => {
                 height: '8px',
                 borderRadius: '50%',
                 backgroundColor: serverOnline === true
-                  ? '#10B981'
+                  ? '#4ADE80'
                   : serverOnline === false
                   ? '#EF4444'
                   : '#F59E0B',

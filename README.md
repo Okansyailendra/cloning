@@ -101,6 +101,18 @@ Buka peramban di: **`http://localhost:5173/`** (Vite secara otomatis melakukan *
 
 ---
 
+### 3. Menjalankan dengan Docker / Docker Compose (Kontainerisasi)
+
+Aplikasi telah dilengkapi multi-stage `Dockerfile` dan `docker-compose.yml` siap pakai:
+
+```bash
+# Bangun dan jalankan kontainer aplikasi (port 8080)
+docker compose up --build
+```
+Buka peramban di: **`http://localhost:8080/`**
+
+---
+
 ## Menjalankan Pengujian (Testing)
 
 Sistem dilengkapi rangkaian pengujian otomatis:

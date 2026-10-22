@@ -6,31 +6,31 @@ interface SpectrogramCanvasProps {
   duration_s: number;
 }
 
-// Deep Space Teal to Solar Amber Colormap LUT (256 colors - ZERO PURPLE)
-const getAcousticTealAmberColor = (val: number): [number, number, number] => {
+// Lush Emerald to Luminous Lime Aurora Colormap LUT (256 colors)
+const getAcousticEmeraldLimeColor = (val: number): [number, number, number] => {
   const norm = Math.max(0, Math.min(255, val)) / 255;
   let r = 0, g = 0, b = 0;
 
   if (norm < 0.25) {
     const t = norm / 0.25;
-    r = Math.round(4 + t * 10);
-    g = Math.round(13 + t * 45);
-    b = Math.round(18 + t * 65);
+    r = Math.round(2 + t * 2);
+    g = Math.round(23 + t * 44);
+    b = Math.round(17 + t * 33);
   } else if (norm < 0.5) {
     const t = (norm - 0.25) / 0.25;
-    r = Math.round(14 + t * 16);
-    g = Math.round(58 + t * 126);
-    b = Math.round(83 + t * 83);
+    r = Math.round(4 + t * 12);
+    g = Math.round(67 + t * 118);
+    b = Math.round(50 + t * 79);
   } else if (norm < 0.75) {
     const t = (norm - 0.5) / 0.25;
-    r = Math.round(30 + t * 215);
-    g = Math.round(184 - t * 26);
-    b = Math.round(166 - t * 155);
+    r = Math.round(16 + t * 147);
+    g = Math.round(185 + t * 45);
+    b = Math.round(129 - t * 76);
   } else {
     const t = (norm - 0.75) / 0.25;
-    r = Math.round(245 + t * 10);
-    g = Math.round(158 + t * 82);
-    b = Math.round(11 + t * 140);
+    r = Math.round(163 + t * 91);
+    g = Math.round(230 + t * 10);
+    b = Math.round(53 + t * 85);
   }
   return [r, g, b];
 };
@@ -60,7 +60,7 @@ export const SpectrogramCanvas: React.FC<SpectrogramCanvasProps> = ({ spectrogra
       const row = data[dataRow] || [];
       for (let frame = 0; frame < n_frames; frame++) {
         const val = row[frame] ?? 0;
-        const [r, g, b] = getAcousticTealAmberColor(val);
+        const [r, g, b] = getAcousticEmeraldLimeColor(val);
         const idx = (mel * n_frames + frame) * 4;
         pixels[idx] = r;
         pixels[idx + 1] = g;
@@ -104,11 +104,11 @@ export const SpectrogramCanvas: React.FC<SpectrogramCanvasProps> = ({ spectrogra
         </h3>
         <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)' }}>
           {hoverInfo ? (
-            <span style={{ color: '#2DD4BF', fontWeight: 600 }}>
+            <span style={{ color: '#4ADE80', fontWeight: 600 }}>
               {hoverInfo.time_s} • {hoverInfo.freq_hz}
             </span>
           ) : (
-            <span style={{ color: '#94A3B8' }}>64 Mel Bins • Spektrum Akustik Teal-Amber</span>
+            <span style={{ color: '#94A3B8' }}>64 Mel Bins • Spektrum Akustik Emerald-Lime</span>
           )}
         </div>
       </div>
@@ -123,7 +123,7 @@ export const SpectrogramCanvas: React.FC<SpectrogramCanvasProps> = ({ spectrogra
             height: '160px',
             borderRadius: 'var(--radius-md)',
             imageRendering: 'pixelated',
-            border: '1px solid rgba(45, 212, 191, 0.2)',
+            border: '1px solid rgba(74, 222, 128, 0.25)',
             display: 'block'
           }}
         />

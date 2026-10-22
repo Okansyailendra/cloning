@@ -59,10 +59,10 @@ export const SampleAudios: React.FC<SampleAudiosProps> = ({ onSelectSample, isLo
               borderRadius: 'var(--radius-md)',
               backgroundColor: 'var(--bg-surface-elevated)',
               border: '1px solid var(--border-subtle)',
-              textAlign: 'left',
-              transition: 'border-color 0.15s, transform 0.15s',
+              transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
               opacity: isLoading ? 0.6 : 1
             }}
+            className="glass-card"
           >
             <div style={{
               width: '32px',

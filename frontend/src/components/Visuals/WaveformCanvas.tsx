@@ -16,7 +16,7 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
   activeIntervals,
   currentTime = 0,
   onSeek,
-  accentColor = '#14B8A6'
+  accentColor = '#4ADE80'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -31,11 +31,11 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
     const centerY = height / 2;
 
     // Clear
-    ctx.fillStyle = '#040D12';
+    ctx.fillStyle = '#021A13';
     ctx.fillRect(0, 0, width, height);
 
     // Grid center line
-    ctx.strokeStyle = 'rgba(45, 212, 191, 0.15)';
+    ctx.strokeStyle = 'rgba(74, 222, 128, 0.18)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, centerY);
@@ -51,7 +51,7 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
       activeIntervals.forEach(([start, end]) => {
         const x1 = (start / duration_s) * width;
         const x2 = (end / duration_s) * width;
-        ctx.fillStyle = 'rgba(20, 184, 166, 0.08)';
+        ctx.fillStyle = 'rgba(74, 222, 128, 0.12)';
         ctx.fillRect(x1, 0, x2 - x1, height);
       });
     }
@@ -120,7 +120,7 @@ export const WaveformCanvas: React.FC<WaveformCanvasProps> = ({
           height: '140px',
           borderRadius: 'var(--radius-md)',
           cursor: onSeek ? 'pointer' : 'default',
-          border: '1px solid rgba(45, 212, 191, 0.2)',
+          border: '1px solid rgba(74, 222, 128, 0.25)',
           display: 'block'
         }}
       />

@@ -35,11 +35,11 @@ export const TentangModelPage: React.FC = () => {
             gap: '6px',
             padding: '4px 10px',
             borderRadius: '9999px',
-            backgroundColor: 'rgba(20, 184, 166, 0.12)',
-            border: '1px solid rgba(45, 212, 191, 0.3)',
+            backgroundColor: 'rgba(74, 222, 128, 0.12)',
+            border: '1px solid rgba(74, 222, 128, 0.3)',
             fontSize: '11px',
             fontWeight: 700,
-            color: '#2DD4BF',
+            color: '#4ADE80',
             fontFamily: 'var(--font-mono)'
           }}>
             <Award size={13} />
@@ -52,7 +52,7 @@ export const TentangModelPage: React.FC = () => {
           letterSpacing: '-0.02em',
           marginBottom: '4px'
         }}>
-          Tentang Model <span className="text-gradient-teal">& Spesifikasi Teknis</span>
+          Tentang Model <span className="text-gradient-lime">& Spesifikasi Teknis</span>
         </h1>
         <p style={{ color: '#94A3B8', fontSize: '14px' }}>
           Dokumentasi arsitektur algoritma pembelajaran mesin, metrik evaluasi pengujian, dan komparasi 6 model klasifikasi audio.
@@ -88,7 +88,7 @@ export const TentangModelPage: React.FC = () => {
               fontFamily: 'var(--font-mono)',
               fontSize: '28px',
               fontWeight: 800,
-              color: '#2DD4BF',
+              color: '#4ADE80',
               margin: '4px 0'
             }}>
               {m.val}
@@ -107,7 +107,7 @@ export const TentangModelPage: React.FC = () => {
           gap: '14px'
         }}>
           <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Layers size={20} color="#14B8A6" />
+            <Layers size={20} color="#4ADE80" />
             Spesifikasi Arsitektur Model
           </h2>
           <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px', color: '#94A3B8', lineHeight: 1.6 }}>
@@ -127,7 +127,7 @@ export const TentangModelPage: React.FC = () => {
           gap: '14px'
         }}>
           <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BookOpen size={20} color="#06B6D4" />
+            <BookOpen size={20} color="#84CC16" />
             Dataset & Karakteristik Data
           </h2>
           <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px', color: '#94A3B8', lineHeight: 1.6 }}>
@@ -156,21 +156,22 @@ export const TentangModelPage: React.FC = () => {
           <div style={{
             padding: '20px',
             borderRadius: 'var(--radius-md)',
-            backgroundColor: 'rgba(249, 115, 22, 0.15)',
-            border: '1px solid rgba(249, 115, 22, 0.4)'
+            backgroundColor: 'rgba(6, 52, 40, 0.85)',
+            border: '1px solid rgba(245, 158, 11, 0.45)',
+            boxShadow: '0 4px 18px rgba(245, 158, 11, 0.12)'
           }}>
-            <div style={{ fontSize: '11px', color: '#F97316', fontWeight: 700, textTransform: 'uppercase' }}>True Berisik</div>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#F97316', fontFamily: 'var(--font-mono)', margin: '4px 0' }}>
+            <div style={{ fontSize: '11px', color: '#FCD34D', fontWeight: 700, textTransform: 'uppercase' }}>True Berisik</div>
+            <div style={{ fontSize: '28px', fontWeight: 800, color: '#FCD34D', fontFamily: 'var(--font-mono)', margin: '4px 0' }}>
               {cm[0][0]}
             </div>
-            <div style={{ fontSize: '11px', color: '#94A3B8' }}>Prediksi Benar (TP)</div>
+            <div style={{ fontSize: '11px', color: '#BBF7D0' }}>Prediksi Benar (TP)</div>
           </div>
 
           <div style={{
             padding: '20px',
             borderRadius: 'var(--radius-md)',
             backgroundColor: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(45, 212, 191, 0.15)'
+            border: '1px solid rgba(74, 222, 128, 0.15)'
           }}>
             <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase' }}>False Non-Berisik</div>
             <div style={{ fontSize: '28px', fontWeight: 800, color: '#94A3B8', fontFamily: 'var(--font-mono)', margin: '4px 0' }}>
@@ -183,7 +184,7 @@ export const TentangModelPage: React.FC = () => {
             padding: '20px',
             borderRadius: 'var(--radius-md)',
             backgroundColor: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(45, 212, 191, 0.15)'
+            border: '1px solid rgba(74, 222, 128, 0.15)'
           }}>
             <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase' }}>False Berisik</div>
             <div style={{ fontSize: '28px', fontWeight: 800, color: '#94A3B8', fontFamily: 'var(--font-mono)', margin: '4px 0' }}>
@@ -195,11 +196,11 @@ export const TentangModelPage: React.FC = () => {
           <div style={{
             padding: '20px',
             borderRadius: 'var(--radius-md)',
-            backgroundColor: 'rgba(20, 184, 166, 0.15)',
-            border: '1px solid rgba(45, 212, 191, 0.4)'
+            backgroundColor: 'rgba(74, 222, 128, 0.15)',
+            border: '1px solid rgba(74, 222, 128, 0.4)'
           }}>
-            <div style={{ fontSize: '11px', color: '#2DD4BF', fontWeight: 700, textTransform: 'uppercase' }}>True Non-Berisik</div>
-            <div style={{ fontSize: '28px', fontWeight: 800, color: '#2DD4BF', fontFamily: 'var(--font-mono)', margin: '4px 0' }}>
+            <div style={{ fontSize: '11px', color: '#4ADE80', fontWeight: 700, textTransform: 'uppercase' }}>True Non-Berisik</div>
+            <div style={{ fontSize: '28px', fontWeight: 800, color: '#4ADE80', fontFamily: 'var(--font-mono)', margin: '4px 0' }}>
               {cm[1][1]}
             </div>
             <div style={{ fontSize: '11px', color: '#94A3B8' }}>Prediksi Benar (TN)</div>
@@ -215,7 +216,7 @@ export const TentangModelPage: React.FC = () => {
         gap: '16px'
       }}>
         <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <BarChart3 size={20} color="#14B8A6" />
+          <BarChart3 size={20} color="#4ADE80" />
           Komparasi 6 Model Pembelajaran Mesin yang Dievaluasi
         </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -223,18 +224,18 @@ export const TentangModelPage: React.FC = () => {
             const isWinner = mc.name === 'Random Forest';
             return (
               <div key={mc.name} style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '13px' }}>
-                <span style={{ width: '180px', fontWeight: isWinner ? 700 : 500, color: isWinner ? '#2DD4BF' : '#94A3B8' }}>
+                <span style={{ width: '180px', fontWeight: isWinner ? 700 : 500, color: isWinner ? '#4ADE80' : '#94A3B8' }}>
                   {mc.name} {isWinner ? '★ (Terpilih)' : ''}
                 </span>
-                <div style={{ flex: 1, height: '16px', backgroundColor: 'rgba(7, 22, 31, 0.85)', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(45, 212, 191, 0.15)' }}>
+                <div style={{ flex: 1, height: '16px', backgroundColor: 'rgba(3, 29, 22, 0.85)', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(74, 222, 128, 0.15)' }}>
                   <div style={{
                     width: `${mc.accuracy * 100}%`,
                     height: '100%',
-                    background: isWinner ? 'linear-gradient(90deg, #14B8A6, #06B6D4)' : 'rgba(148, 163, 184, 0.4)',
+                    background: isWinner ? 'linear-gradient(90deg, #22C55E, #84CC16)' : 'rgba(148, 163, 184, 0.4)',
                     transition: 'width 0.4s ease'
                   }} />
                 </div>
-                <span style={{ width: '60px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: isWinner ? '#2DD4BF' : '#F0FDFA' }}>
+                <span style={{ width: '60px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: isWinner ? '#4ADE80' : '#F0FDFA' }}>
                   {(mc.accuracy * 100).toFixed(1)}%
                 </span>
               </div>

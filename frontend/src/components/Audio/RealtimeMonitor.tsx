@@ -11,13 +11,12 @@ import {
   BellOff,
   Radio,
   FolderOpen,
-  BookOpen,
-  Zap,
   Sliders,
   CheckCircle2,
   Clock
 } from 'lucide-react';
 import { predictLiveAudio } from '../../services/api';
+import { saveHistoryItem, createLiveSessionHistoryItem } from '../../services/history';
 import type { LivePredictResponse, LiveHistoryPoint } from '../../types/api';
 
 // Helper to encode Float32Array to 16-bit PCM WAV Blob
@@ -78,6 +77,8 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   const [activeAlarmLevel, setActiveAlarmLevel] = useState<'none' | 'medium' | 'high'>('none');
   const [testingAlarm, setTestingAlarm] = useState<string | null>(null);
 
+  const [savedNotification, setSavedNotification] = useState<string | null>(null);
+
   // Cumulative statistics
   const [totalChecks, setTotalChecks] = useState<number>(0);
   const [noisyChecks, setNoisyChecks] = useState<number>(0);
@@ -105,6 +106,14 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   const isActiveRef = useRef<boolean>(false);
   const audioAlertRef = useRef<boolean>(true);
 
+  // Sync refs for auto-saving on stop
+  const elapsedSecRef = useRef<number>(0);
+  const totalChecksRef = useRef<number>(0);
+  const noisyChecksRef = useRef<number>(0);
+  const peakRmsRef = useRef<number>(0);
+  const historyRef = useRef<LiveHistoryPoint[]>([]);
+  const liveDataRef = useRef<LivePredictResponse | null>(null);
+
   // Synchronize state to refs
   useEffect(() => {
     isActiveRef.current = isActive;
@@ -113,6 +122,13 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   useEffect(() => {
     audioAlertRef.current = audioAlert;
   }, [audioAlert]);
+
+  useEffect(() => { elapsedSecRef.current = elapsedSec; }, [elapsedSec]);
+  useEffect(() => { totalChecksRef.current = totalChecks; }, [totalChecks]);
+  useEffect(() => { noisyChecksRef.current = noisyChecks; }, [noisyChecks]);
+  useEffect(() => { peakRmsRef.current = peakRms; }, [peakRms]);
+  useEffect(() => { historyRef.current = history; }, [history]);
+  useEffect(() => { liveDataRef.current = liveData; }, [liveData]);
 
   // 3-second circular audio buffer (at 22050 Hz = 66150 samples)
   const TARGET_SR = 22050;
@@ -176,10 +192,52 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     setTestingAlarm(null);
   }, []);
 
-  // Preview test alarm sounds (respects lock)
+  // Preview test alarm sounds (respects lock & updates visual graphs)
   const handleTestAlarm = (type: 'medium' | 'high') => {
     if (isAlarmPlayingRef.current) return;
     setTestingAlarm(type);
+
+    const testPct = type === 'high' ? 0.95 : 0.82;
+    const testRms = type === 'high' ? 0.125 : 0.068;
+    const testCentroid = type === 'high' ? 2450 : 1880;
+    const testTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    setLiveData({
+      timestamp: testTime,
+      label: 'berisik',
+      label_display: 'BERISIK',
+      confidence: testPct,
+      probabilities: {
+        berisik: testPct,
+        'non-berisik': 1 - testPct
+      },
+      rms: testRms,
+      centroid_hz: testCentroid,
+      zcr: 0.085,
+      low_confidence: false,
+      status_text: type === 'high' ? 'Uji Alarm: BAHAYA (≥ 90%)' : 'Uji Alarm: WASPADA (70% - 90%)'
+    });
+
+    setHistory(prev => {
+      const point: LiveHistoryPoint = {
+        time: testTime,
+        label: 'berisik',
+        confidence: testPct,
+        rms: testRms
+      };
+      if (prev.length === 0) {
+        // Create baseline and add test point
+        const baseline: LiveHistoryPoint[] = Array.from({ length: 29 }, () => ({
+          time: testTime,
+          label: 'non-berisik',
+          confidence: 0.88,
+          rms: 0.012
+        }));
+        return [...baseline, point];
+      }
+      return [...prev, point].slice(-30);
+    });
+
     playAlarmAudio(type);
   };
 
@@ -194,12 +252,12 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     const height = canvas.height;
     const centerY = height / 2;
 
-    // 1. Dark Scientific Background
-    ctx.fillStyle = '#040D12';
+    // 1. Dark Scientific Forest Background
+    ctx.fillStyle = '#021A13';
     ctx.fillRect(0, 0, width, height);
 
-    // 2. Technical Lab Grid Lines
-    ctx.strokeStyle = 'rgba(45, 212, 191, 0.08)';
+    // 2. Technical Lab Grid Lines (Emerald Tinted)
+    ctx.strokeStyle = 'rgba(74, 222, 128, 0.08)';
     ctx.lineWidth = 1;
     const gridCols = 16;
     const gridRows = 8;
@@ -219,7 +277,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     }
 
     // Prominent Centerline & Division Crosshairs
-    ctx.strokeStyle = 'rgba(45, 212, 191, 0.22)';
+    ctx.strokeStyle = 'rgba(74, 222, 128, 0.22)';
     ctx.beginPath();
     ctx.moveTo(0, centerY);
     ctx.lineTo(width, centerY);
@@ -234,17 +292,17 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       analyser.getFloatTimeDomainData(dataArray);
 
       // Determine Dynamic Stroke Color
-      let strokeColor = '#14B8A6'; // Calm Cyan/Teal
+      let strokeColor = '#4ADE80'; // Calm Lime-Emerald
       if (activeAlarmLevel === 'high') {
         strokeColor = '#EF4444'; // Red for >=90%
       } else if (activeAlarmLevel === 'medium') {
-        strokeColor = '#F97316'; // Amber for 70-90%
+        strokeColor = '#F59E0B'; // Amber for 70-90%
       } else if (liveData?.label === 'berisik') {
-        strokeColor = '#F97316';
+        strokeColor = '#F59E0B';
       }
 
       // Layer 1: Faint Secondary Shadow/Wave
-      ctx.strokeStyle = strokeColor === '#EF4444' ? 'rgba(239, 68, 68, 0.25)' : strokeColor === '#F97316' ? 'rgba(249, 115, 22, 0.25)' : 'rgba(20, 184, 166, 0.25)';
+      ctx.strokeStyle = strokeColor === '#EF4444' ? 'rgba(239, 68, 68, 0.25)' : strokeColor === '#F59E0B' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(74, 222, 128, 0.25)';
       ctx.lineWidth = 1.0;
       ctx.shadowBlur = 0;
       ctx.beginPath();
@@ -283,7 +341,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       const phase = idlePhaseRef.current;
 
       // Layer 1: Ambient Faint Echo Wave
-      ctx.strokeStyle = 'rgba(20, 184, 166, 0.18)';
+      ctx.strokeStyle = 'rgba(74, 222, 128, 0.20)';
       ctx.lineWidth = 1.2;
       ctx.shadowBlur = 0;
       ctx.beginPath();
@@ -297,11 +355,11 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       }
       ctx.stroke();
 
-      // Layer 2: Primary Standby Oscilloscope Wave
-      ctx.strokeStyle = '#14B8A6';
+      // Layer 2: Primary Standby Oscilloscope Wave (Luminous Lime Glow)
+      ctx.strokeStyle = '#4ADE80';
       ctx.lineWidth = 2.0;
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = '#14B8A6';
+      ctx.shadowBlur = 9;
+      ctx.shadowColor = '#4ADE80';
       ctx.beginPath();
       for (let x = 0; x < width; x += 3) {
         const normX = x / width;
@@ -327,7 +385,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     };
   }, [drawOscilloscope]);
 
-  // Draw Rolling History Chart: Multi-stop Threshold Spline Area Chart (30 Sec)
+  // Draw Rolling History Chart: Multi-stop Threshold Spline Area Chart (30 Sec Sliding Window)
   useEffect(() => {
     const canvas = historyCanvasRef.current;
     if (!canvas) return;
@@ -336,69 +394,108 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
 
     const width = canvas.width;
     const height = canvas.height;
-    const padTop = 16;
-    const padBottom = 22;
+    const padTop = 18;
+    const padBottom = 26;
     const chartHeight = height - padTop - padBottom;
+    const startX = 24;
+    const endX = width - 24;
+    const chartWidth = endX - startX;
 
-    // 1. Dark Canvas Background
-    ctx.fillStyle = '#040D12';
+    // 1. Dark Scientific Canvas Background
+    ctx.fillStyle = '#021A13';
     ctx.fillRect(0, 0, width, height);
 
-    // 2. Technical Grid & Time Threshold Lines
-    ctx.strokeStyle = 'rgba(45, 212, 191, 0.08)';
+    // Threshold Heights
+    const yDanger = padTop + (1 - 0.90) * chartHeight;
+    const yWarn = padTop + (1 - 0.70) * chartHeight;
+
+    // 2. Zone Background Bands (Harmonized with Dark Emerald)
+    // Bahaya (>=90%)
+    ctx.fillStyle = 'rgba(244, 63, 94, 0.06)';
+    ctx.fillRect(startX, padTop, chartWidth, yDanger - padTop);
+
+    // Waspada (70%-90%)
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.05)';
+    ctx.fillRect(startX, yDanger, chartWidth, yWarn - yDanger);
+
+    // Tenang (<70%)
+    ctx.fillStyle = 'rgba(74, 222, 128, 0.03)';
+    ctx.fillRect(startX, yWarn, chartWidth, height - padBottom - yWarn);
+
+    // 3. Technical Grid & 5-Second Vertical Subdivision
+    ctx.strokeStyle = 'rgba(74, 222, 128, 0.09)';
     ctx.lineWidth = 1;
-    // 5-second vertical subdivision grids
+    const timeLabels = ['-30s', '-25s', '-20s', '-15s', '-10s', '-5s', 'Sekarang'];
     for (let s = 0; s <= 6; s++) {
-      const gx = (s / 6) * (width - 40) + 20;
+      const gx = startX + (s / 6) * chartWidth;
       ctx.beginPath();
       ctx.moveTo(gx, padTop);
       ctx.lineTo(gx, height - padBottom);
       ctx.stroke();
+
+      // Time axis label at bottom
+      ctx.fillStyle = s === 6 ? '#4ADE80' : 'rgba(187, 247, 208, 0.6)';
+      ctx.font = '10px JetBrains Mono, monospace';
+      ctx.textAlign = s === 0 ? 'left' : s === 6 ? 'right' : 'center';
+      ctx.fillText(timeLabels[s], gx, height - 8);
     }
 
-    // Danger Threshold Line (>=90%)
-    const yDanger = padTop + (1 - 0.90) * chartHeight;
-    ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
-    ctx.setLineDash([4, 4]);
+    // Danger Threshold Line (90%)
+    ctx.strokeStyle = 'rgba(244, 63, 94, 0.50)';
+    ctx.setLineDash([5, 5]);
     ctx.beginPath();
-    ctx.moveTo(20, yDanger);
-    ctx.lineTo(width - 20, yDanger);
+    ctx.moveTo(startX, yDanger);
+    ctx.lineTo(endX, yDanger);
     ctx.stroke();
 
     // Warning Threshold Line (70%)
-    const yWarn = padTop + (1 - 0.70) * chartHeight;
-    ctx.strokeStyle = 'rgba(249, 115, 22, 0.35)';
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.50)';
     ctx.beginPath();
-    ctx.moveTo(20, yWarn);
-    ctx.lineTo(width - 20, yWarn);
+    ctx.moveTo(startX, yWarn);
+    ctx.lineTo(endX, yWarn);
     ctx.stroke();
     ctx.setLineDash([]); // Reset dash
 
     // Threshold labels on right
-    ctx.fillStyle = 'rgba(239, 68, 68, 0.7)';
+    ctx.fillStyle = '#FDA4AF';
     ctx.font = '10px JetBrains Mono, monospace';
     ctx.textAlign = 'right';
-    ctx.fillText('90% BAHAYA', width - 24, yDanger - 3);
+    ctx.fillText('90% BAHAYA', endX - 6, yDanger - 4);
 
-    ctx.fillStyle = 'rgba(249, 115, 22, 0.7)';
-    ctx.fillText('70% WASPADA', width - 24, yWarn - 3);
+    ctx.fillStyle = '#FCD34D';
+    ctx.fillText('70% WASPADA', endX - 6, yWarn - 4);
+
+    ctx.fillStyle = '#86EFAC';
+    ctx.fillText('<70% TENANG', endX - 6, height - padBottom - 6);
 
     if (history.length === 0) {
       ctx.fillStyle = '#94A3B8';
       ctx.font = '12px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Menunggu aliran evaluasi suara per detik...', width / 2, height / 2 + 2);
+      ctx.fillText('Standby — Tekan "Mulai Monitoring" untuk mengalirkan 30 detik data akustik real-time', width / 2, height / 2 + 2);
       return;
     }
 
-    // 3. Compute Coordinates for 30 Data Points
+    // 4. Compute Coordinates for 30 Data Points Sliding Window
     const maxPoints = 30;
-    const startX = 20;
-    const endX = width - 20;
-    const stepX = (endX - startX) / (maxPoints - 1);
+    const stepX = chartWidth / (maxPoints - 1);
 
-    const points = history.map((pt, idx) => {
-      // Offset so the latest point aligns to the right edge of currently recorded items
+    // Guarantee full 30 points window
+    let displayPoints: LiveHistoryPoint[] = [...history];
+    if (displayPoints.length < maxPoints) {
+      const padCount = maxPoints - displayPoints.length;
+      const padArr: LiveHistoryPoint[] = Array.from({ length: padCount }, () => ({
+        time: '',
+        label: 'non-berisik',
+        confidence: 0.88,
+        rms: 0.012
+      }));
+      displayPoints = [...padArr, ...displayPoints];
+    } else if (displayPoints.length > maxPoints) {
+      displayPoints = displayPoints.slice(-maxPoints);
+    }
+
+    const points = displayPoints.map((pt, idx) => {
       const x = startX + idx * stepX;
       const isNoisy = pt.label === 'berisik';
       const pct = isNoisy ? pt.confidence : 1 - pt.confidence;
@@ -406,22 +503,12 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       return { x, y, pct, isNoisy, pt };
     });
 
-    if (points.length === 1) {
-      // Single point indicator
-      const p = points[0];
-      ctx.fillStyle = p.pct >= 0.9 ? '#EF4444' : p.pct >= 0.7 ? '#F97316' : '#14B8A6';
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-      ctx.fill();
-      return;
-    }
-
-    // 4. Draw Smooth Spline Area Fill (Multi-stop Vertical Gradient)
+    // 5. Draw Smooth Spline Area Fill (Multi-stop Vertical Gradient Harmonized with Emerald)
     const areaGrad = ctx.createLinearGradient(0, padTop, 0, height - padBottom);
-    areaGrad.addColorStop(0.0, 'rgba(239, 68, 68, 0.40)');    // Danger peak
-    areaGrad.addColorStop(0.3, 'rgba(249, 115, 22, 0.28)');    // Warning zone
-    areaGrad.addColorStop(0.7, 'rgba(20, 184, 166, 0.18)');    // Normal zone
-    areaGrad.addColorStop(1.0, 'rgba(20, 184, 166, 0.02)');    // Base
+    areaGrad.addColorStop(0.0, 'rgba(244, 63, 94, 0.35)');   // Danger peak
+    areaGrad.addColorStop(0.28, 'rgba(245, 158, 11, 0.22)'); // Warning zone
+    areaGrad.addColorStop(0.65, 'rgba(74, 222, 128, 0.16)'); // Normal zone (Emerald-Lime)
+    areaGrad.addColorStop(1.0, 'rgba(4, 38, 29, 0.02)');     // Base
 
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
@@ -438,17 +525,17 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     ctx.fillStyle = areaGrad;
     ctx.fill();
 
-    // 5. Draw Smooth Stroke Curve (Layered Gradient Stroke)
+    // 6. Draw Smooth Stroke Curve (Layered Gradient Stroke)
     const lineGrad = ctx.createLinearGradient(0, padTop, 0, height - padBottom);
-    lineGrad.addColorStop(0.0, '#EF4444');
-    lineGrad.addColorStop(0.3, '#F97316');
-    lineGrad.addColorStop(0.7, '#14B8A6');
-    lineGrad.addColorStop(1.0, '#10B981');
+    lineGrad.addColorStop(0.0, '#FB7185'); // Soft coral
+    lineGrad.addColorStop(0.3, '#FBBF24'); // Soft amber
+    lineGrad.addColorStop(0.7, '#4ADE80'); // Emerald
+    lineGrad.addColorStop(1.0, '#22C55E'); // Forest green
 
     ctx.strokeStyle = lineGrad;
     ctx.lineWidth = 2.6;
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = 'rgba(20, 184, 166, 0.5)';
+    ctx.shadowBlur = 9;
+    ctx.shadowColor = 'rgba(74, 222, 128, 0.45)';
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
     for (let i = 0; i < points.length - 1; i++) {
@@ -460,10 +547,10 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // 6. Data Dots & Pulse on Latest Point
+    // 7. Data Dots & Pulse on Latest Point
     points.forEach((p, idx) => {
       const isLatest = idx === points.length - 1;
-      const dotColor = p.pct >= 0.9 ? '#EF4444' : p.pct >= 0.7 ? '#F97316' : '#14B8A6';
+      const dotColor = p.pct >= 0.9 ? '#FDA4AF' : p.pct >= 0.7 ? '#FCD34D' : '#4ADE80';
 
       ctx.fillStyle = dotColor;
       ctx.beginPath();
@@ -472,9 +559,9 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
 
       if (isLatest) {
         ctx.strokeStyle = dotColor;
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1.6;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
         ctx.stroke();
       }
     });
@@ -542,8 +629,18 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   // Start Real-Time Monitoring
   const startMonitoring = async () => {
     setErrorMsg(null);
+    setSavedNotification(null);
     setElapsedSec(0);
-    setHistory([]);
+
+    // Seed 30-second sliding history buffer with ambient room baseline
+    const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const initialBuffer: LiveHistoryPoint[] = Array.from({ length: 30 }, (_, i) => ({
+      time: nowStr,
+      label: 'non-berisik',
+      confidence: 0.88 - (Math.sin(i * 0.4) * 0.04),
+      rms: 0.012 + (Math.sin(i * 0.3) * 0.003)
+    }));
+    setHistory(initialBuffer);
     setTotalChecks(0);
     setNoisyChecks(0);
     setPeakRms(0);
@@ -615,6 +712,36 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
       audioCtxRef.current.close();
     }
+
+    // Automatically summarize and save session data to localStorage
+    const sec = elapsedSecRef.current;
+    const checks = totalChecksRef.current;
+    const noisy = noisyChecksRef.current;
+    const hist = historyRef.current;
+    const peak = peakRmsRef.current;
+    const live = liveDataRef.current;
+
+    if (sec > 0 || checks > 0 || hist.length > 0) {
+      const avgRms = hist.length > 0
+        ? hist.reduce((sum, p) => sum + p.rms, 0) / hist.length
+        : (live?.rms || 0.02);
+      const centroid = live?.centroid_hz || 1680;
+      const zcr = live?.zcr || 0.058;
+
+      const sessionItem = createLiveSessionHistoryItem({
+        duration_s: Math.max(1, sec),
+        totalChecks: Math.max(1, checks),
+        noisyChecks: noisy,
+        peakRms: Math.max(peak, avgRms),
+        avgRms,
+        centroid_hz: centroid,
+        zcr
+      });
+
+      saveHistoryItem(sessionItem);
+      setSavedNotification(`Sesi monitoring (${formatSec(sec)}) berhasil direkap & tersimpan otomatis di Riwayat!`);
+      setTimeout(() => setSavedNotification(null), 8000);
+    }
   };
 
   useEffect(() => {
@@ -640,170 +767,83 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* ============================================================== */}
-      {/* 1. SPLIT HERO LAYOUT: HERO INTRO (LEFT) + CONTROL CARD (RIGHT) */}
+      {/* 1. KONTROL DETEKSI & AMBANG ALARM (POSISI TENGAH ATAS)         */}
       {/* ============================================================== */}
       <section style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(340px, 1.15fr) minmax(340px, 1fr)',
-        gap: '28px',
-        alignItems: 'stretch'
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: '100%',
+        gap: '14px'
       }}>
-        {/* SISI KIRI: HERO INTRO */}
-        <div className="glass-card" style={{
-          padding: '36px 32px',
-          position: 'relative',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          border: '1px solid rgba(45, 212, 191, 0.22)'
-        }}>
-          {/* Subtle Ambient Soundwave Background Ripple */}
-          <div style={{
-            position: 'absolute',
-            right: '-10%',
-            bottom: '-15%',
-            width: '320px',
-            height: '320px',
-            background: 'radial-gradient(circle, rgba(20, 184, 166, 0.12) 0%, transparent 70%)',
-            pointerEvents: 'none',
-            zIndex: 0
-          }} />
-
-          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Academic Tag */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '4px 10px',
-                borderRadius: '9999px',
-                backgroundColor: 'rgba(20, 184, 166, 0.12)',
-                border: '1px solid rgba(45, 212, 191, 0.3)',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: '#2DD4BF',
-                letterSpacing: '0.04em',
-                fontFamily: 'var(--font-mono)'
-              }}>
-                <Zap size={13} />
-                PENGOLAHAN SINYAL DIGITAL • RANDOM FOREST
+        {/* Saved Session Notification Banner */}
+        {savedNotification && (
+          <div className="glass-card" style={{
+            width: '100%',
+            maxWidth: '920px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            padding: '12px 20px',
+            backgroundColor: 'rgba(4, 38, 29, 0.95)',
+            border: '1px solid rgba(74, 222, 128, 0.55)',
+            boxShadow: '0 6px 24px rgba(16, 185, 129, 0.25)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <CheckCircle2 size={18} color="#4ADE80" />
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#F0FDF4' }}>
+                {savedNotification}
               </span>
             </div>
-
-            {/* Main Bold Headline with Teal to Cyan Gradient */}
-            <h1 style={{
-              fontSize: '40px',
-              fontWeight: 800,
-              letterSpacing: '-0.03em',
-              lineHeight: 1.15
-            }}>
-              Analisis Kebisingan <br />
-              <span className="text-gradient-teal">Lingkungan Kerja</span>
-            </h1>
-
-            {/* Concise Description */}
-            <p style={{
-              color: '#94A3B8',
-              fontSize: '15px',
-              lineHeight: 1.6,
-              maxWidth: '540px'
-            }}>
-              Sistem inspeksi audio cerdas berbasis ekstraksi 10 fitur spektral digital dan klasifikasi model Machine Learning untuk deteksi tingkat kenyamanan akustik kerja secara instan dan tanpa jeda.
-            </p>
-
-            {/* 2 CTA Buttons */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', marginTop: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               <button
-                onClick={() => {
-                  if (!isActive) {
-                    startMonitoring();
-                  }
-                  const el = document.getElementById('control-card-panel');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}
+                onClick={() => navigate('/riwayat')}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '14px 26px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%)',
-                  color: '#040D12',
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  boxShadow: '0 4px 20px rgba(20, 184, 166, 0.35)',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+                  padding: '6px 14px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'rgba(74, 222, 128, 0.2)',
+                  border: '1px solid rgba(74, 222, 128, 0.45)',
+                  color: '#4ADE80',
+                  fontSize: '12px',
+                  fontWeight: 700
                 }}
               >
-                <Radio size={18} />
-                <span>Mulai Deteksi Sekarang</span>
+                Lihat Riwayat
               </button>
-
               <button
-                onClick={() => navigate('/tentang-model')}
+                onClick={() => navigate('/bandingkan')}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '14px 22px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'rgba(15, 46, 65, 0.65)',
-                  border: '1px solid rgba(45, 212, 191, 0.25)',
-                  color: '#F0FDFA',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  transition: 'background-color 0.15s ease'
+                  padding: '6px 14px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'rgba(132, 204, 22, 0.2)',
+                  border: '1px solid rgba(132, 204, 22, 0.45)',
+                  color: '#A3E635',
+                  fontSize: '12px',
+                  fontWeight: 700
                 }}
+
               >
-                <BookOpen size={16} color="#2DD4BF" />
-                <span>Pelajari Fitur</span>
+                Bandingkan
               </button>
             </div>
           </div>
+        )}
 
-          {/* Feature Badge Highlights */}
-          <div style={{
-            position: 'relative',
-            zIndex: 1,
-            marginTop: '28px',
-            paddingTop: '20px',
-            borderTop: '1px solid rgba(45, 212, 191, 0.12)',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '16px',
-            fontSize: '12px',
-            color: '#94A3B8'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <CheckCircle2 size={15} color="#14B8A6" />
-              <span>Oskiloskop 60 FPS</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <CheckCircle2 size={15} color="#14B8A6" />
-              <span>Alarm Ganda (70% & 90%)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <CheckCircle2 size={15} color="#14B8A6" />
-              <span>10 Bobot Spektral MDI</span>
-            </div>
-          </div>
-        </div>
-
-        {/* SISI KANAN: CONTROL CARD */}
         <div id="control-card-panel" className="glass-card" style={{
-          padding: '28px',
+          width: '100%',
+          maxWidth: '920px',
+          padding: '26px 28px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
           gap: '20px',
-          border: `1px solid ${
-            activeAlarmLevel === 'high' ? 'rgba(239, 68, 68, 0.8)' :
-            activeAlarmLevel === 'medium' ? 'rgba(249, 115, 22, 0.7)' :
-            isActive ? 'rgba(45, 212, 191, 0.5)' : 'rgba(45, 212, 191, 0.2)'
-          }`,
-          boxShadow: activeAlarmLevel === 'high' ? '0 0 30px rgba(239, 68, 68, 0.3)' : 'var(--glass-shadow)',
+          border: `1px solid ${activeAlarmLevel === 'high' ? 'rgba(244, 63, 94, 0.7)' :
+              activeAlarmLevel === 'medium' ? 'rgba(245, 158, 11, 0.6)' :
+                isActive ? 'rgba(74, 222, 128, 0.5)' : 'rgba(74, 222, 128, 0.22)'
+            }`,
+          boxShadow: activeAlarmLevel === 'high' ? '0 0 30px rgba(244, 63, 94, 0.22)' : 'var(--glass-shadow)',
           transition: 'all 0.3s ease'
         }}>
           {/* Top Bar: View Mode Switcher + Status Badge */}
@@ -811,10 +851,10 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
             {/* Mode Switcher */}
             <div style={{
               display: 'flex',
-              backgroundColor: 'rgba(7, 22, 31, 0.85)',
+              backgroundColor: 'rgba(3, 27, 20, 0.85)',
               padding: '4px',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(45, 212, 191, 0.2)',
+              border: '1px solid rgba(74, 222, 128, 0.2)',
               gap: '4px'
             }}>
               <button
@@ -826,9 +866,9 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                   padding: '6px 14px',
                   borderRadius: 'var(--radius-sm)',
                   fontSize: '12px',
-                  fontWeight: 600,
-                  backgroundColor: viewMode === 'realtime' ? '#14B8A6' : 'transparent',
-                  color: viewMode === 'realtime' ? '#040D12' : '#94A3B8',
+                  fontWeight: 700,
+                  backgroundColor: viewMode === 'realtime' ? '#4ADE80' : 'transparent',
+                  color: viewMode === 'realtime' ? '#021F16' : '#BBF7D0',
                   transition: 'all 0.15s ease'
                 }}
               >
@@ -846,8 +886,8 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                   borderRadius: 'var(--radius-sm)',
                   fontSize: '12px',
                   fontWeight: 600,
-                  backgroundColor: viewMode === 'file' ? '#14B8A6' : 'transparent',
-                  color: viewMode === 'file' ? '#040D12' : '#94A3B8',
+                  backgroundColor: viewMode === 'file' ? '#4ADE80' : 'transparent',
+                  color: viewMode === 'file' ? '#021F16' : '#BBF7D0',
                   transition: 'all 0.15s ease'
                 }}
               >
@@ -866,16 +906,16 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 borderRadius: '9999px',
                 fontSize: '11px',
                 fontWeight: 700,
-                backgroundColor: isActive ? 'rgba(239, 68, 68, 0.18)' : 'rgba(255, 255, 255, 0.05)',
-                color: isActive ? '#EF4444' : '#94A3B8',
-                border: `1px solid ${isActive ? 'rgba(239, 68, 68, 0.45)' : 'rgba(255, 255, 255, 0.1)'}`,
+                backgroundColor: isActive ? 'rgba(244, 63, 94, 0.18)' : 'rgba(255, 255, 255, 0.05)',
+                color: isActive ? '#FDA4AF' : '#BBF7D0',
+                border: `1px solid ${isActive ? 'rgba(244, 63, 94, 0.45)' : 'rgba(255, 255, 255, 0.1)'}`,
                 fontFamily: 'var(--font-mono)'
               }}>
                 <span style={{
                   width: '7px',
                   height: '7px',
                   borderRadius: '50%',
-                  backgroundColor: isActive ? '#EF4444' : '#94A3B8',
+                  backgroundColor: isActive ? '#FDA4AF' : '#BBF7D0',
                   display: 'inline-block'
                 }} />
                 {isActive ? 'MONITORING' : 'STANDBY'}
@@ -883,7 +923,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
 
               <span style={{
                 fontSize: '12px',
-                color: '#94A3B8',
+                color: '#BBF7D0',
                 fontFamily: 'var(--font-mono)',
                 display: 'flex',
                 alignItems: 'center',
@@ -909,11 +949,12 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 gap: '8px',
                 padding: '12px 18px',
                 borderRadius: 'var(--radius-md)',
-                backgroundColor: audioAlert ? 'rgba(239, 68, 68, 0.15)' : 'rgba(15, 46, 65, 0.65)',
-                border: `1px solid ${audioAlert ? 'rgba(239, 68, 68, 0.45)' : 'rgba(45, 212, 191, 0.2)'}`,
-                color: audioAlert ? '#EF4444' : '#94A3B8',
+                backgroundColor: audioAlert ? 'rgba(74, 222, 128, 0.14)' : 'rgba(6, 52, 40, 0.65)',
+                border: `1px solid ${audioAlert ? 'rgba(74, 222, 128, 0.45)' : 'rgba(74, 222, 128, 0.22)'}`,
+                color: audioAlert ? '#4ADE80' : '#86EFAC',
                 fontSize: '13px',
                 fontWeight: 600,
+                boxShadow: audioAlert ? '0 0 16px rgba(74, 222, 128, 0.22)' : 'none',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -932,15 +973,15 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                   gap: '10px',
                   padding: '12px 24px',
                   borderRadius: 'var(--radius-md)',
-                  background: 'linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%)',
-                  color: '#040D12',
-                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #A3E635 0%, #4ADE80 50%, #22C55E 100%)',
+                  color: '#021F16',
+                  fontWeight: 800,
                   fontSize: '15px',
-                  boxShadow: '0 4px 18px rgba(20, 184, 166, 0.35)',
+                  boxShadow: '0 4px 20px rgba(74, 222, 128, 0.38)',
                   minWidth: '200px'
                 }}
               >
-                <Play size={18} fill="#040D12" />
+                <Play size={18} fill="#021F16" />
                 <span>Mulai Monitoring</span>
               </button>
             ) : (
@@ -954,11 +995,11 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                   gap: '10px',
                   padding: '12px 24px',
                   borderRadius: 'var(--radius-md)',
-                  backgroundColor: '#EF4444',
+                  backgroundColor: '#E11D48',
                   color: '#FFFFFF',
                   fontWeight: 700,
                   fontSize: '15px',
-                  boxShadow: '0 4px 18px rgba(239, 68, 68, 0.35)',
+                  boxShadow: '0 4px 18px rgba(225, 29, 72, 0.35)',
                   minWidth: '200px'
                 }}
               >
@@ -970,29 +1011,30 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
 
           {/* Alarm Status & Testing Strip */}
           <div style={{
-            backgroundColor: 'rgba(7, 22, 31, 0.75)',
+            backgroundColor: 'rgba(3, 27, 20, 0.75)',
             borderRadius: 'var(--radius-md)',
             padding: '14px 16px',
-            border: '1px solid rgba(45, 212, 191, 0.15)',
+            border: '1px solid rgba(74, 222, 128, 0.18)',
             display: 'flex',
             flexDirection: 'column',
             gap: '12px'
           }}>
-            {/* Threshold Chips */}
+            {/* Threshold Chips (Harmonized with Emerald Theme) */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#F0FDFA' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#F0FDF4' }}>
                 Status Ambang Alarm:
               </span>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <span style={{
                   fontSize: '11px',
                   fontFamily: 'var(--font-mono)',
-                  padding: '3px 8px',
+                  padding: '4px 10px',
                   borderRadius: 'var(--radius-sm)',
-                  backgroundColor: activeAlarmLevel === 'medium' ? 'rgba(249, 115, 22, 0.25)' : 'rgba(249, 115, 22, 0.10)',
-                  border: `1px solid ${activeAlarmLevel === 'medium' ? 'rgba(249, 115, 22, 0.7)' : 'rgba(249, 115, 22, 0.3)'}`,
-                  color: '#F97316',
-                  fontWeight: activeAlarmLevel === 'medium' ? 700 : 500
+                  backgroundColor: activeAlarmLevel === 'medium' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(6, 52, 40, 0.75)',
+                  border: `1px solid ${activeAlarmLevel === 'medium' ? 'rgba(245, 158, 11, 0.75)' : 'rgba(245, 158, 11, 0.35)'}`,
+                  color: '#FCD34D',
+                  fontWeight: activeAlarmLevel === 'medium' ? 700 : 500,
+                  boxShadow: activeAlarmLevel === 'medium' ? '0 0 12px rgba(245, 158, 11, 0.3)' : 'none'
                 }}>
                   70% - 90%: alarm_70-90%.mp3 {activeAlarmLevel === 'medium' ? '● AKTIF' : ''}
                 </span>
@@ -1000,19 +1042,20 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 <span style={{
                   fontSize: '11px',
                   fontFamily: 'var(--font-mono)',
-                  padding: '3px 8px',
+                  padding: '4px 10px',
                   borderRadius: 'var(--radius-sm)',
-                  backgroundColor: activeAlarmLevel === 'high' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.10)',
-                  border: `1px solid ${activeAlarmLevel === 'high' ? 'rgba(239, 68, 68, 0.8)' : 'rgba(239, 68, 68, 0.3)'}`,
-                  color: '#EF4444',
-                  fontWeight: activeAlarmLevel === 'high' ? 700 : 500
+                  backgroundColor: activeAlarmLevel === 'high' ? 'rgba(244, 63, 94, 0.25)' : 'rgba(6, 52, 40, 0.75)',
+                  border: `1px solid ${activeAlarmLevel === 'high' ? 'rgba(244, 63, 94, 0.8)' : 'rgba(244, 63, 94, 0.35)'}`,
+                  color: '#FDA4AF',
+                  fontWeight: activeAlarmLevel === 'high' ? 700 : 500,
+                  boxShadow: activeAlarmLevel === 'high' ? '0 0 14px rgba(244, 63, 94, 0.35)' : 'none'
                 }}>
                   ≥ 90%: alarm_90-100%.mp3 {activeAlarmLevel === 'high' ? '🚨 AKTIF' : ''}
                 </span>
               </div>
             </div>
 
-            {/* Slider & Test Audio Buttons */}
+            {/* Slider & Test Audio Buttons (Harmonized) */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -1020,12 +1063,12 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
               flexWrap: 'wrap',
               gap: '12px',
               paddingTop: '8px',
-              borderTop: '1px solid rgba(45, 212, 191, 0.1)'
+              borderTop: '1px solid rgba(74, 222, 128, 0.12)'
             }}>
               {/* Volume Slider */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Sliders size={13} color="#94A3B8" />
-                <span style={{ fontSize: '11px', color: '#94A3B8' }}>Vol Alarm:</span>
+                <Sliders size={13} color="#86EFAC" />
+                <span style={{ fontSize: '11px', color: '#BBF7D0' }}>Vol Alarm:</span>
                 <input
                   type="range"
                   min="0"
@@ -1033,27 +1076,27 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                   step="0.05"
                   value={alarmVolume}
                   onChange={(e) => setAlarmVolume(parseFloat(e.target.value))}
-                  style={{ width: '70px', accentColor: '#14B8A6', cursor: 'pointer' }}
+                  style={{ width: '70px', accentColor: '#4ADE80', cursor: 'pointer' }}
                   title={`Volume: ${Math.round(alarmVolume * 100)}%`}
                 />
-                <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#2DD4BF', width: '28px' }}>
+                <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#4ADE80', width: '28px', fontWeight: 700 }}>
                   {Math.round(alarmVolume * 100)}%
                 </span>
               </div>
 
               {/* Test Buttons */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '11px', color: '#94A3B8' }}>Uji:</span>
+                <span style={{ fontSize: '11px', color: '#BBF7D0' }}>Uji:</span>
                 <button
                   onClick={() => handleTestAlarm('medium')}
                   disabled={activeAlarmLevel !== 'none'}
                   style={{
                     fontSize: '11px',
-                    padding: '4px 10px',
+                    padding: '5px 12px',
                     borderRadius: 'var(--radius-sm)',
-                    backgroundColor: 'rgba(249, 115, 22, 0.12)',
-                    border: '1px solid rgba(249, 115, 22, 0.35)',
-                    color: '#F97316',
+                    backgroundColor: 'rgba(6, 52, 40, 0.8)',
+                    border: '1px solid rgba(245, 158, 11, 0.40)',
+                    color: '#FCD34D',
                     fontWeight: 600,
                     opacity: activeAlarmLevel !== 'none' ? 0.5 : 1,
                     cursor: activeAlarmLevel !== 'none' ? 'not-allowed' : 'pointer'
@@ -1066,11 +1109,11 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                   disabled={activeAlarmLevel !== 'none'}
                   style={{
                     fontSize: '11px',
-                    padding: '4px 10px',
+                    padding: '5px 12px',
                     borderRadius: 'var(--radius-sm)',
-                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                    border: '1px solid rgba(239, 68, 68, 0.35)',
-                    color: '#EF4444',
+                    backgroundColor: 'rgba(6, 52, 40, 0.8)',
+                    border: '1px solid rgba(244, 63, 94, 0.40)',
+                    color: '#FDA4AF',
                     fontWeight: 600,
                     opacity: activeAlarmLevel !== 'none' ? 0.5 : 1,
                     cursor: activeAlarmLevel !== 'none' ? 'not-allowed' : 'pointer'
@@ -1090,9 +1133,9 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
               gap: '8px',
               padding: '10px 14px',
               borderRadius: 'var(--radius-md)',
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.35)',
-              color: '#EF4444',
+              backgroundColor: 'rgba(244, 63, 94, 0.15)',
+              border: '1px solid rgba(244, 63, 94, 0.35)',
+              color: '#FDA4AF',
               fontSize: '13px'
             }}>
               <AlertTriangle size={16} />
@@ -1109,19 +1152,19 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
               alignItems: 'center',
               padding: '12px 16px',
               borderRadius: 'var(--radius-md)',
-              backgroundColor: 'rgba(7, 22, 31, 0.90)',
-              border: `1px solid ${noisePercent >= 90 ? 'rgba(239, 68, 68, 0.6)' : isNoisy ? 'rgba(249, 115, 22, 0.5)' : 'rgba(20, 184, 166, 0.4)'}`
+              backgroundColor: 'rgba(3, 27, 20, 0.92)',
+              border: `1px solid ${noisePercent >= 90 ? 'rgba(244, 63, 94, 0.6)' : isNoisy ? 'rgba(245, 158, 11, 0.5)' : 'rgba(74, 222, 128, 0.45)'}`
             }}>
               <div style={{
                 width: '44px',
                 height: '44px',
                 borderRadius: 'var(--radius-md)',
-                backgroundColor: noisePercent >= 90 ? 'rgba(239, 68, 68, 0.2)' : isNoisy ? 'rgba(249, 115, 22, 0.2)' : 'rgba(20, 184, 166, 0.2)',
-                color: noisePercent >= 90 ? '#EF4444' : isNoisy ? '#F97316' : '#14B8A6',
+                backgroundColor: noisePercent >= 90 ? 'rgba(244, 63, 94, 0.2)' : isNoisy ? 'rgba(245, 158, 11, 0.2)' : 'rgba(74, 222, 128, 0.2)',
+                color: noisePercent >= 90 ? '#FDA4AF' : isNoisy ? '#FCD34D' : '#4ADE80',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: `1px solid ${noisePercent >= 90 ? 'rgba(239, 68, 68, 0.6)' : isNoisy ? 'rgba(249, 115, 22, 0.6)' : 'rgba(20, 184, 166, 0.6)'}`
+                border: `1px solid ${noisePercent >= 90 ? 'rgba(244, 63, 94, 0.6)' : isNoisy ? 'rgba(245, 158, 11, 0.6)' : 'rgba(74, 222, 128, 0.6)'}`
               }}>
                 {isNoisy ? <Volume2 size={22} /> : <VolumeX size={22} />}
               </div>
@@ -1131,11 +1174,11 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                     fontSize: '15px',
                     fontWeight: 800,
                     fontFamily: 'var(--font-display)',
-                    color: noisePercent >= 90 ? '#EF4444' : isNoisy ? '#F97316' : '#14B8A6'
+                    color: noisePercent >= 90 ? '#FDA4AF' : isNoisy ? '#FCD34D' : '#4ADE80'
                   }}>
                     {liveData.label_display} ({noisePercent}%)
                   </span>
-                  <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#94A3B8' }}>
+                  <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#BBF7D0' }}>
                     RMS: {liveData.rms.toFixed(4)} • {Math.round(liveData.centroid_hz)} Hz
                   </span>
                 </div>
@@ -1147,8 +1190,8 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                   display: 'flex',
                   marginTop: '6px'
                 }}>
-                  <div style={{ width: `${liveData.probabilities.berisik * 100}%`, backgroundColor: '#F97316' }} />
-                  <div style={{ width: `${liveData.probabilities['non-berisik'] * 100}%`, backgroundColor: '#14B8A6' }} />
+                  <div style={{ width: `${liveData.probabilities.berisik * 100}%`, backgroundColor: '#FBBF24' }} />
+                  <div style={{ width: `${liveData.probabilities['non-berisik'] * 100}%`, backgroundColor: '#4ADE80' }} />
                 </div>
               </div>
             </div>
@@ -1177,19 +1220,19 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 width: '32px',
                 height: '32px',
                 borderRadius: 'var(--radius-sm)',
-                backgroundColor: 'rgba(20, 184, 166, 0.15)',
+                backgroundColor: 'rgba(74, 222, 128, 0.16)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2DD4BF'
+                color: '#4ADE80'
               }}>
                 <Activity size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#F0FDFA' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#F0FDF4' }}>
                   Oskiloskop Sinyal Suara Langsung (60 FPS)
                 </h3>
-                <span style={{ fontSize: '11px', color: '#94A3B8' }}>
+                <span style={{ fontSize: '11px', color: '#BBF7D0' }}>
                   {isActive ? 'Visualisasi mikrofon aktif real-time' : 'Animasi ritme standby laboratorium'}
                 </span>
               </div>
@@ -1197,12 +1240,12 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
 
             <span style={{
               fontSize: '11px',
-              color: '#5EEAD4',
+              color: '#4ADE80',
               fontFamily: 'var(--font-mono)',
-              backgroundColor: 'rgba(7, 22, 31, 0.7)',
+              backgroundColor: 'rgba(3, 27, 20, 0.7)',
               padding: '4px 10px',
               borderRadius: '9999px',
-              border: '1px solid rgba(45, 212, 191, 0.2)'
+              border: '1px solid rgba(74, 222, 128, 0.22)'
             }}>
               Resolusi: 22.050 Hz • 2048 Sampel Jendela
             </span>
@@ -1216,7 +1259,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
               width: '100%',
               height: '220px',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(45, 212, 191, 0.2)',
+              border: '1px solid rgba(74, 222, 128, 0.22)',
               display: 'block'
             }}
           />
@@ -1231,10 +1274,10 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#F0FDFA' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#F0FDF4' }}>
                 Linimasa Riwayat Kebisingan (30 Detik Terakhir)
               </h3>
-              <p style={{ fontSize: '11px', color: '#94A3B8' }}>
+              <p style={{ fontSize: '11px', color: '#BBF7D0' }}>
                 Grafik area mulus kurva spline intensitas suara temporal.
               </p>
             </div>
@@ -1245,14 +1288,14 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
               gap: '12px',
               fontSize: '11px',
               fontFamily: 'var(--font-mono)',
-              backgroundColor: 'rgba(7, 22, 31, 0.7)',
+              backgroundColor: 'rgba(3, 27, 20, 0.7)',
               padding: '4px 10px',
               borderRadius: '9999px',
-              border: '1px solid rgba(45, 212, 191, 0.2)'
+              border: '1px solid rgba(74, 222, 128, 0.22)'
             }}>
               <span style={{ color: '#EF4444', fontWeight: 600 }}>● Bahaya (≥90%)</span>
-              <span style={{ color: '#F97316', fontWeight: 600 }}>● Waspada (70-90%)</span>
-              <span style={{ color: '#14B8A6', fontWeight: 600 }}>● Tenang (&lt;70%)</span>
+              <span style={{ color: '#F59E0B', fontWeight: 600 }}>● Waspada (70-90%)</span>
+              <span style={{ color: '#4ADE80', fontWeight: 600 }}>● Tenang (&lt;70%)</span>
             </div>
           </div>
 
@@ -1264,7 +1307,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
               width: '100%',
               height: '220px',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(45, 212, 191, 0.2)',
+              border: '1px solid rgba(74, 222, 128, 0.22)',
               display: 'block'
             }}
           />
@@ -1281,37 +1324,37 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
           gap: '16px'
         }}>
           <div className="glass-card" style={{ padding: '18px 20px' }}>
-            <div style={{ fontSize: '11px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '11px', color: '#BBF7D0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Total Durasi Evaluasi
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#F0FDFA', marginTop: '4px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#F0FDF4', marginTop: '4px' }}>
               {totalChecks} detik
             </div>
           </div>
 
           <div className="glass-card" style={{ padding: '18px 20px' }}>
-            <div style={{ fontSize: '11px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '11px', color: '#BBF7D0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Dominasi Suara Berisik
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#F97316', marginTop: '4px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#F59E0B', marginTop: '4px' }}>
               {noisyChecks} dtk ({noisyPct}%)
             </div>
           </div>
 
           <div className="glass-card" style={{ padding: '18px 20px' }}>
-            <div style={{ fontSize: '11px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '11px', color: '#BBF7D0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Dominasi Suara Tenang
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#14B8A6', marginTop: '4px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#4ADE80', marginTop: '4px' }}>
               {totalChecks - noisyChecks} dtk ({quietPct}%)
             </div>
           </div>
 
           <div className="glass-card" style={{ padding: '18px 20px' }}>
-            <div style={{ fontSize: '11px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '11px', color: '#BBF7D0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Puncak Volume (Peak RMS)
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#2DD4BF', marginTop: '4px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#4ADE80', marginTop: '4px' }}>
               {peakRms.toFixed(4)}
             </div>
           </div>

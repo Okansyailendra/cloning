@@ -1,13 +1,27 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getHistory, clearHistory, exportHistoryToCsv } from '../services/history';
 import type { HistoryItem } from '../types/api';
-import { Download, Trash2, Volume2, VolumeX, History } from 'lucide-react';
+import { Download, Trash2, Volume2, VolumeX, History, GitCompare } from 'lucide-react';
 
 export const RiwayatPage: React.FC = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<HistoryItem[]>([]);
 
-  useEffect(() => {
+  const reloadHistory = () => {
     setItems(getHistory());
+  };
+
+  useEffect(() => {
+    reloadHistory();
+
+    const handleUpdate = () => reloadHistory();
+    window.addEventListener('soundlab_history_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('soundlab_history_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, []);
 
   const handleClear = () => {
@@ -28,11 +42,11 @@ export const RiwayatPage: React.FC = () => {
               gap: '6px',
               padding: '4px 10px',
               borderRadius: '9999px',
-              backgroundColor: 'rgba(20, 184, 166, 0.12)',
-              border: '1px solid rgba(45, 212, 191, 0.3)',
+              backgroundColor: 'rgba(74, 222, 128, 0.12)',
+              border: '1px solid rgba(74, 222, 128, 0.3)',
               fontSize: '11px',
               fontWeight: 700,
-              color: '#2DD4BF',
+              color: '#4ADE80',
               fontFamily: 'var(--font-mono)'
             }}>
               <History size={13} />
@@ -45,15 +59,36 @@ export const RiwayatPage: React.FC = () => {
             letterSpacing: '-0.02em',
             marginBottom: '4px'
           }}>
-            Riwayat <span className="text-gradient-teal">Analisis Audio</span>
+            Riwayat <span className="text-gradient-lime">Analisis Audio</span>
           </h1>
           <p style={{ color: '#94A3B8', fontSize: '14px' }}>
-            Catatan berkas audio yang telah dianalisis selama sesi penelusuran (maksimal 50 item).
+            Catatan berkas audio & sesi mikrofon real-time yang telah dievaluasi (maksimal 50 item).
           </p>
         </div>
 
         {items.length > 0 && (
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {items.length >= 2 && (
+              <button
+                onClick={() => navigate('/bandingkan')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'linear-gradient(135deg, #A3E635 0%, #4ADE80 100%)',
+                  color: '#021F16',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  boxShadow: '0 4px 14px rgba(74, 222, 128, 0.35)'
+                }}
+              >
+                <GitCompare size={15} />
+                <span>Bandingkan ({items.length} Data)</span>
+              </button>
+            )}
+
             <button
               onClick={() => exportHistoryToCsv(items)}
               style={{
@@ -62,11 +97,11 @@ export const RiwayatPage: React.FC = () => {
                 gap: '8px',
                 padding: '10px 16px',
                 borderRadius: 'var(--radius-md)',
-                backgroundColor: 'rgba(15, 46, 65, 0.75)',
-                border: '1px solid rgba(45, 212, 191, 0.3)',
+                backgroundColor: 'rgba(4, 38, 29, 0.75)',
+                border: '1px solid rgba(74, 222, 128, 0.3)',
                 fontSize: '13px',
                 fontWeight: 600,
-                color: '#2DD4BF',
+                color: '#4ADE80',
                 boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)'
               }}
             >
@@ -81,11 +116,11 @@ export const RiwayatPage: React.FC = () => {
                 gap: '8px',
                 padding: '10px 16px',
                 borderRadius: 'var(--radius-md)',
-                backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid rgba(239, 68, 68, 0.35)',
+                backgroundColor: 'rgba(244, 63, 94, 0.15)',
+                border: '1px solid rgba(244, 63, 94, 0.35)',
                 fontSize: '13px',
                 fontWeight: 600,
-                color: '#EF4444'
+                color: '#FDA4AF'
               }}
             >
               <Trash2 size={15} />
@@ -116,9 +151,9 @@ export const RiwayatPage: React.FC = () => {
             textAlign: 'left'
           }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(45, 212, 191, 0.18)', color: '#94A3B8' }}>
+              <tr style={{ borderBottom: '1px solid rgba(74, 222, 128, 0.18)', color: '#94A3B8' }}>
                 <th style={{ padding: '14px 16px' }}>Waktu</th>
-                <th style={{ padding: '14px 16px' }}>Nama Berkas</th>
+                <th style={{ padding: '14px 16px' }}>Nama Berkas / Sesi</th>
                 <th style={{ padding: '14px 16px', textAlign: 'right' }}>Durasi</th>
                 <th style={{ padding: '14px 16px', textAlign: 'center' }}>Prediksi</th>
                 <th style={{ padding: '14px 16px', textAlign: 'right' }}>Keyakinan</th>
@@ -132,8 +167,8 @@ export const RiwayatPage: React.FC = () => {
                 const isNoisy = it.label === 'berisik';
                 return (
                   <tr key={it.id} style={{
-                    borderBottom: '1px solid rgba(45, 212, 191, 0.08)',
-                    transition: 'background-color 0.15s ease'
+                    borderBottom: '1px solid rgba(74, 222, 128, 0.08)',
+                    transition: 'background-color 0.2s ease'
                   }}>
                     <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', color: '#94A3B8' }}>
                       {it.timestamp}
@@ -141,7 +176,7 @@ export const RiwayatPage: React.FC = () => {
                     <td style={{ padding: '14px 16px', fontWeight: 600, color: '#F0FDFA' }}>
                       {it.filename}
                     </td>
-                    <td style={{ padding: '14px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: '#99F6E4' }}>
+                    <td style={{ padding: '14px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: '#BBF7D0' }}>
                       {it.duration_s.toFixed(1)}s
                     </td>
                     <td style={{ padding: '14px 16px', textAlign: 'center' }}>
@@ -153,9 +188,9 @@ export const RiwayatPage: React.FC = () => {
                         borderRadius: 'var(--radius-sm)',
                         fontSize: '11px',
                         fontWeight: 700,
-                        backgroundColor: isNoisy ? 'rgba(249, 115, 22, 0.15)' : 'rgba(20, 184, 166, 0.15)',
-                        color: isNoisy ? '#F97316' : '#14B8A6',
-                        border: `1px solid ${isNoisy ? 'rgba(249, 115, 22, 0.4)' : 'rgba(45, 212, 191, 0.4)'}`
+                        backgroundColor: isNoisy ? 'rgba(6, 52, 40, 0.85)' : 'rgba(74, 222, 128, 0.14)',
+                        color: isNoisy ? '#FCD34D' : '#4ADE80',
+                        border: `1px solid ${isNoisy ? 'rgba(245, 158, 11, 0.45)' : 'rgba(74, 222, 128, 0.4)'}`
                       }}>
                         {isNoisy ? <Volume2 size={13} /> : <VolumeX size={13} />}
                         {it.label.toUpperCase()}
@@ -164,13 +199,13 @@ export const RiwayatPage: React.FC = () => {
                     <td style={{ padding: '14px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#F0FDFA' }}>
                       {(it.confidence * 100).toFixed(1)}%
                     </td>
-                    <td style={{ padding: '14px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: '#99F6E4' }}>
+                    <td style={{ padding: '14px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: '#BBF7D0' }}>
                       {it.rms_mean.toFixed(4)}
                     </td>
-                    <td style={{ padding: '14px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: '#99F6E4' }}>
+                    <td style={{ padding: '14px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: '#BBF7D0' }}>
                       {Math.round(it.centroid_mean)} Hz
                     </td>
-                    <td style={{ padding: '14px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: '#99F6E4' }}>
+                    <td style={{ padding: '14px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: '#BBF7D0' }}>
                       {it.zcr_mean.toFixed(4)}
                     </td>
                   </tr>

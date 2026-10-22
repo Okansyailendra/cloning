@@ -12,11 +12,11 @@ export const BatasanEtikaPage: React.FC = () => {
             gap: '6px',
             padding: '4px 10px',
             borderRadius: '9999px',
-            backgroundColor: 'rgba(245, 158, 11, 0.12)',
-            border: '1px solid rgba(245, 158, 11, 0.35)',
+            backgroundColor: 'rgba(74, 222, 128, 0.12)',
+            border: '1px solid rgba(74, 222, 128, 0.35)',
             fontSize: '11px',
             fontWeight: 700,
-            color: '#F59E0B',
+            color: '#4ADE80',
             fontFamily: 'var(--font-mono)'
           }}>
             <FileCheck size={13} />
@@ -29,28 +29,29 @@ export const BatasanEtikaPage: React.FC = () => {
           letterSpacing: '-0.02em',
           marginBottom: '4px'
         }}>
-          Batasan Sistem, <span className="text-gradient-teal">Kalibrasi & Etika Penggunaan</span>
+          Batasan Sistem, <span className="text-gradient-lime">Kalibrasi & Etika Penggunaan</span>
         </h1>
         <p style={{ color: '#94A3B8', fontSize: '14px' }}>
           Panduan transparansi akademik, batasan distribusi data suara, variasi perangkat keras mikrofon, serta perlindungan privasi pengguna.
         </p>
       </div>
 
-      {/* Academic Disclaimer Box */}
+      {/* Academic Disclaimer Box - Harmonized Dark Emerald with Soft Amber Accent */}
       <div className="glass-card" style={{
-        backgroundColor: 'rgba(245, 158, 11, 0.08)',
-        border: '1px solid rgba(245, 158, 11, 0.35)',
+        backgroundColor: 'rgba(6, 44, 34, 0.75)',
+        border: '1px solid rgba(251, 191, 36, 0.35)',
+        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(251, 191, 36, 0.05)',
         padding: '24px',
         display: 'flex',
         alignItems: 'flex-start',
         gap: '16px'
       }}>
-        <AlertTriangle size={26} color="#F59E0B" style={{ flexShrink: 0, marginTop: '2px' }} />
+        <AlertTriangle size={26} color="#FBBF24" style={{ flexShrink: 0, marginTop: '2px' }} />
         <div>
-          <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#F59E0B', marginBottom: '6px' }}>
+          <h2 style={{ fontSize: '17px', fontWeight: 700, color: '#FEF08A', marginBottom: '6px' }}>
             Bukan Alat Sertifikasi Legal K3 / Regulasi Resmi
           </h2>
-          <p style={{ fontSize: '14px', color: '#F0FDFA', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '14px', color: '#E2E8F0', lineHeight: 1.6 }}>
             Sound Lab dikembangkan sebagai purwarupa penelitian sistem cerdas klasifikasi audio lingkungan kerja.
             Aplikasi ini <strong>tidak menggantikan Sound Level Meter (SLM) terkalibrasi Kelas 1/2 standar IEC 61672</strong> untuk
             kebutuhan sertifikasi hukum K3, inspeksi resmi ketenagakerjaan, atau uji kepatuhan ambang batas dB(A).
@@ -67,7 +68,7 @@ export const BatasanEtikaPage: React.FC = () => {
           gap: '12px'
         }}>
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Cpu size={20} color="#14B8A6" />
+            <Cpu size={20} color="#4ADE80" />
             Sensitivitas Perangkat Keras Mikrofon
           </h2>
           <p style={{ fontSize: '13px', color: '#94A3B8', lineHeight: 1.6 }}>
@@ -84,7 +85,7 @@ export const BatasanEtikaPage: React.FC = () => {
           gap: '12px'
         }}>
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <ShieldAlert size={20} color="#F97316" />
+            <ShieldAlert size={20} color="#34D399" />
             Distribusi Suara (Out-of-Distribution)
           </h2>
           <p style={{ fontSize: '13px', color: '#94A3B8', lineHeight: 1.6 }}>
@@ -101,7 +102,7 @@ export const BatasanEtikaPage: React.FC = () => {
           gap: '12px'
         }}>
           <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Lock size={20} color="#06B6D4" />
+            <Lock size={20} color="#84CC16" />
             Privasi & Pemrosesan Data
           </h2>
           <p style={{ fontSize: '13px', color: '#94A3B8', lineHeight: 1.6 }}>
