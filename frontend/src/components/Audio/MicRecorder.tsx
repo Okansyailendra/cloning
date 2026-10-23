@@ -13,6 +13,8 @@ export const MicRecorder: React.FC<MicRecorderProps> = ({ onAudioRecorded, isLoa
   const [micError, setMicError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const startTimeRef = useRef<number>(0);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const animFrameRef = useRef<number | null>(null);
@@ -22,9 +24,11 @@ export const MicRecorder: React.FC<MicRecorderProps> = ({ onAudioRecorded, isLoa
     setMicError(null);
     audioChunksRef.current = [];
     setRecordSeconds(0);
+    startTimeRef.current = Date.now();
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
 
@@ -65,14 +69,18 @@ export const MicRecorder: React.FC<MicRecorderProps> = ({ onAudioRecorded, isLoa
         const filename = `rekaman-mikrofon-${new Date().toISOString().replace(/[:.]/g, '-')}.${ext}`;
         
         // Stop audio tracks
-        stream.getTracks().forEach(t => t.stop());
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(t => t.stop());
+          streamRef.current = null;
+        }
         if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-          audioCtxRef.current.close();
+          audioCtxRef.current.close().catch(() => {});
         }
         setMeterVolume(0);
 
-        if (recordSeconds < 0.5) {
-          setMicError('Rekaman terlalu pendek (< 0,5 detik). Rekam minimal 3 detik untuk akurasi optimal.');
+        const durationS = (Date.now() - startTimeRef.current) / 1000;
+        if (durationS < 0.8) {
+          setMicError('Rekaman terlalu pendek (< 0,8 detik). Rekam minimal 3 detik untuk akurasi optimal.');
           return;
         }
 
@@ -112,8 +120,12 @@ export const MicRecorder: React.FC<MicRecorderProps> = ({ onAudioRecorded, isLoa
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
       if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        audioCtxRef.current.close();
+        audioCtxRef.current.close().catch(() => {});
       }
     };
   }, []);

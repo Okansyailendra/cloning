@@ -80,9 +80,9 @@ export const SpectrogramCanvas: React.FC<SpectrogramCanvasProps> = ({ spectrogra
     const timeRatio = Math.max(0, Math.min(1, x / rect.width));
     const freqRatio = Math.max(0, Math.min(1, 1 - y / rect.height));
 
-    const time_s = (timeRatio * duration_s).toFixed(2);
+    const time_s = (timeRatio * (duration_s || 0)).toFixed(2);
     const melIdx = Math.floor(freqRatio * (spectrogram.n_mels - 1));
-    const freq_hz = spectrogram.freqs_hz[melIdx] ? Math.round(spectrogram.freqs_hz[melIdx]) : 0;
+    const freq_hz = (spectrogram.freqs_hz && spectrogram.freqs_hz[melIdx]) ? Math.round(spectrogram.freqs_hz[melIdx]) : 0;
 
     setHoverInfo({ time_s: `${time_s} dtk`, freq_hz: `${freq_hz} Hz` });
   };

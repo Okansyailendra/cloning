@@ -100,3 +100,75 @@ def extract_features(y_clean: np.ndarray, sr: int = 22050, chunk_dur: int = 3):
     mfcc_13_profile = [float(np.mean(cat_mfcc[k, :])) for k in range(13)]
 
     return feature_dict, chunk_features_list, mfcc_13_profile
+
+
+def extract_timeline_chunks(y_raw: np.ndarray, sr: int = 22050, chunk_dur: float = 3.0) -> list:
+    """
+    Extracts features sequentially across the actual raw audio timeline (y_raw)
+    in chunk_dur second segments, ensuring chunk index and timestamps match
+    the audio player scrubber and waveform canvas exactly.
+    """
+    chunk_samples = int(sr * chunk_dur)
+    total_samples = len(y_raw)
+    duration_s = float(total_samples / sr)
+    
+    num_chunks = max(1, int(np.ceil(total_samples / chunk_samples)))
+    chunk_list = []
+    
+    for i in range(num_chunks):
+        start_sample = i * chunk_samples
+        end_sample = min(total_samples, (i + 1) * chunk_samples)
+        
+        start_s = round(i * chunk_dur, 2)
+        end_s = round(min(duration_s, (i + 1) * chunk_dur), 2)
+        
+        ch = y_raw[start_sample:end_sample]
+        if len(ch) == 0:
+            continue
+            
+        max_amp = float(np.max(np.abs(ch)))
+        rms_raw = float(np.sqrt(np.mean(ch**2)))
+        
+        # Check if this segment is basically pure silence / senyap
+        if max_amp < 1e-4 or rms_raw < 0.003:
+            ch_dict = {
+                'start_s': start_s,
+                'end_s': end_s,
+                'is_silent': True,
+                'rms_mean': max(0.0005, rms_raw),
+                'rms_std': 0.0001,
+                'centroid_mean': 500.0,
+                'zcr_mean': 0.01
+            }
+            for k in range(13):
+                ch_dict[f'mfcc{k+1}_mean'] = -500.0
+            chunk_list.append(ch_dict)
+            continue
+            
+        # If chunk is shorter than chunk_samples (the final tail chunk), tile it to 3s
+        if len(ch) < chunk_samples:
+            n_rep = int(np.ceil(chunk_samples / len(ch)))
+            ch_eval = np.tile(ch, n_rep)[:chunk_samples]
+        else:
+            ch_eval = ch
+            
+        ch_rms = librosa.feature.rms(y=ch_eval)
+        ch_cent = librosa.feature.spectral_centroid(y=ch_eval, sr=sr)
+        ch_zcr = librosa.feature.zero_crossing_rate(y=ch_eval)
+        ch_mfcc = librosa.feature.mfcc(y=ch_eval, sr=sr, n_mfcc=13)
+        
+        ch_dict = {
+            'start_s': start_s,
+            'end_s': end_s,
+            'is_silent': False,
+            'rms_mean': float(np.mean(ch_rms)),
+            'rms_std': float(np.std(ch_rms, ddof=0)),
+            'centroid_mean': float(np.mean(ch_cent)),
+            'zcr_mean': float(np.mean(ch_zcr))
+        }
+        for k in range(13):
+            ch_dict[f'mfcc{k+1}_mean'] = float(np.mean(ch_mfcc[k, :]))
+            
+        chunk_list.append(ch_dict)
+        
+    return chunk_list

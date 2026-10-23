@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { RealtimeMonitor } from '../components/Audio/RealtimeMonitor';
 import { Uploader } from '../components/Audio/Uploader';
 import { SampleAudios } from '../components/Audio/SampleAudios';
+import { MicRecorder } from '../components/Audio/MicRecorder';
 import { AudioPlayer } from '../components/Audio/AudioPlayer';
 import { PredictionCard } from '../components/Results/PredictionCard';
 import { ExplanationCard } from '../components/Results/ExplanationCard';
@@ -13,12 +14,12 @@ import { ChunkTimeline } from '../components/Visuals/ChunkTimeline';
 import { predictAudioFile } from '../services/api';
 import { saveHistoryItem } from '../services/history';
 import type { PredictResponse } from '../types/api';
-import { Radio, FolderOpen, Loader2, RefreshCw } from 'lucide-react';
+import { Radio, FolderOpen, Loader2, RefreshCw, Mic } from 'lucide-react';
 
 export const AnalisisPage: React.FC = () => {
   // Main view mode: 'realtime' (default) vs 'file'
   const [viewMode, setViewMode] = useState<'realtime' | 'file'>('realtime');
-  const [fileTab, setFileTab] = useState<'upload' | 'sample'>('upload');
+  const [fileTab, setFileTab] = useState<'upload' | 'record' | 'sample'>('upload');
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -82,6 +83,10 @@ export const AnalisisPage: React.FC = () => {
     setErrorMsg(null);
   };
 
+  const handleSelectChunk = (start_s: number) => {
+    setSeekTarget(start_s);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* ============================================================== */}
@@ -92,7 +97,7 @@ export const AnalisisPage: React.FC = () => {
       )}
 
       {/* ============================================================== */}
-      {/* MODE 2: ANALISIS BERKAS / SAMPEL                               */}
+      {/* MODE 2: ANALISIS BERKAS / SAMPEL / REKAMAN                     */}
       {/* ============================================================== */}
       {viewMode === 'file' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -181,12 +186,13 @@ export const AnalisisPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Sub-tabs: Unggah Berkas vs Coba Contoh */}
+              {/* Sub-tabs: Unggah Berkas vs Rekam Mikrofon vs Coba Contoh */}
               <div style={{
                 display: 'flex',
                 gap: '8px',
                 borderBottom: '1px solid var(--border-subtle)',
-                paddingBottom: '10px'
+                paddingBottom: '10px',
+                flexWrap: 'wrap'
               }}>
                 <button
                   onClick={() => setFileTab('upload')}
@@ -201,6 +207,24 @@ export const AnalisisPage: React.FC = () => {
                   }}
                 >
                   Unggah Berkas Audio
+                </button>
+                <button
+                  onClick={() => setFileTab('record')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '13px',
+                    fontWeight: fileTab === 'record' ? 600 : 500,
+                    backgroundColor: fileTab === 'record' ? 'var(--bg-surface-elevated)' : 'transparent',
+                    color: fileTab === 'record' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    border: `1px solid ${fileTab === 'record' ? 'var(--border-active)' : 'transparent'}`
+                  }}
+                >
+                  <Mic size={14} />
+                  <span>Rekam Mikrofon</span>
                 </button>
                 <button
                   onClick={() => setFileTab('sample')}
@@ -218,10 +242,13 @@ export const AnalisisPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* Upload Dropzone or Samples Picker */}
+              {/* Upload Dropzone, Mic Recorder, or Samples Picker */}
               <div>
                 {fileTab === 'upload' && (
                   <Uploader onFileSelected={(f) => processAudio(f, f.name)} isLoading={isLoading} />
+                )}
+                {fileTab === 'record' && (
+                  <MicRecorder onAudioRecorded={(blob, filename) => processAudio(blob, filename)} isLoading={isLoading} />
                 )}
                 {fileTab === 'sample' && (
                   <SampleAudios onSelectSample={handleSampleSelected} isLoading={isLoading} />
@@ -245,7 +272,7 @@ export const AnalisisPage: React.FC = () => {
                 Mengekstraksi Fitur Audio Spektral & Menjalankan Model...
               </div>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                Memotong bagian hening (top_db=25), menghitung RMS, MFCC 1-13, dan Spectral Centroid.
+                Memotong hening (top_db=25), menghitung RMS, MFCC 1-13, dan Spectral Centroid.
               </p>
             </div>
           )}
@@ -290,6 +317,7 @@ export const AnalisisPage: React.FC = () => {
                 currentTime={currentTime}
                 onSeek={(t) => setSeekTarget(t)}
                 accentColor={result.prediction.label === 'berisik' ? '#EF4444' : '#10B981'}
+                chunks={result.chunks}
               />
 
               <SpectrogramCanvas
@@ -299,7 +327,7 @@ export const AnalisisPage: React.FC = () => {
 
               <ChunkTimeline
                 chunks={result.chunks}
-                onSelectChunk={(start_s) => setSeekTarget(start_s)}
+                onSelectChunk={handleSelectChunk}
               />
 
               <ExplanationCard explanation={result.explanation} />

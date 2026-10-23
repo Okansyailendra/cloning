@@ -160,7 +160,7 @@ export const RiwayatPage: React.FC = () => {
                       {it.filename}
                     </td>
                     <td className="tabular-nums" style={{ padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                      {it.duration_s.toFixed(1)}s
+                      {(it.duration_s ?? 0).toFixed(1)}s
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                       <span style={{
@@ -180,16 +180,16 @@ export const RiwayatPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="tabular-nums" style={{ padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {(it.confidence * 100).toFixed(1)}%
+                      {((it.confidence ?? 0) * 100).toFixed(1)}%
                     </td>
                     <td className="tabular-nums" style={{ padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                      {it.rms_mean.toFixed(4)}
+                      {(it.rms_mean ?? 0).toFixed(4)}
                     </td>
                     <td className="tabular-nums" style={{ padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                      {Math.round(it.centroid_mean)} Hz
+                      {Math.round(it.centroid_mean ?? 0)} Hz
                     </td>
                     <td className="tabular-nums" style={{ padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                      {it.zcr_mean.toFixed(4)}
+                      {(it.zcr_mean ?? 0).toFixed(4)}
                     </td>
                   </tr>
                 );

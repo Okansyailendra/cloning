@@ -24,6 +24,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, see
     if (seekTime !== null && seekTime !== undefined && audioRef.current) {
       audioRef.current.currentTime = seekTime;
       setCurrentTime(seekTime);
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
   }, [seekTime]);
 

@@ -41,16 +41,20 @@ export const BandingkanPage: React.FC = () => {
       return item.full_response.features;
     }
     const isNoisy = item.label === 'berisik';
+    const rmsMean = typeof item.rms_mean === 'number' ? item.rms_mean : 0;
+    const zcrMean = typeof item.zcr_mean === 'number' ? item.zcr_mean : 0;
+    const centroidMean = typeof item.centroid_mean === 'number' ? item.centroid_mean : 0;
+
     return [
-      { rank: 1, name: 'rms_mean', display_name: 'Volume Rata-rata (RMS)', unit: '', value: parseFloat(item.rms_mean.toFixed(4)), class_mean: { berisik: 0.0955, 'non-berisik': 0.0352 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.1992 },
-      { rank: 2, name: 'rms_std', display_name: 'Fluktuasi Dinamika RMS', unit: '', value: parseFloat((item.rms_mean * 0.45).toFixed(4)), class_mean: { berisik: 0.0479, 'non-berisik': 0.0208 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.1071 },
+      { rank: 1, name: 'rms_mean', display_name: 'Volume Rata-rata (RMS)', unit: '', value: parseFloat(rmsMean.toFixed(4)), class_mean: { berisik: 0.0955, 'non-berisik': 0.0352 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.1992 },
+      { rank: 2, name: 'rms_std', display_name: 'Fluktuasi Dinamika RMS', unit: '', value: parseFloat((rmsMean * 0.45).toFixed(4)), class_mean: { berisik: 0.0479, 'non-berisik': 0.0208 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.1071 },
       { rank: 3, name: 'mfcc3_mean', display_name: 'Timbre MFCC 3', unit: 'dB', value: isNoisy ? -32.5 : -12.0, class_mean: { berisik: -34.84, 'non-berisik': -11.17 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0874 },
-      { rank: 4, name: 'mfcc1_mean', display_name: 'Bentuk Spektral Utama (MFCC 1)', unit: 'dB', value: parseFloat((-260 + item.rms_mean * 350).toFixed(2)), class_mean: { berisik: -200.82, 'non-berisik': -320.70 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0827 },
+      { rank: 4, name: 'mfcc1_mean', display_name: 'Bentuk Spektral Utama (MFCC 1)', unit: 'dB', value: parseFloat((-260 + rmsMean * 350).toFixed(2)), class_mean: { berisik: -200.82, 'non-berisik': -320.70 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0827 },
       { rank: 5, name: 'mfcc5_mean', display_name: 'Timbre MFCC 5', unit: 'dB', value: isNoisy ? -18.0 : -5.0, class_mean: { berisik: -18.82, 'non-berisik': -4.77 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0797 },
       { rank: 6, name: 'mfcc7_mean', display_name: 'Timbre MFCC 7', unit: 'dB', value: isNoisy ? -13.0 : -8.5, class_mean: { berisik: -13.28, 'non-berisik': -8.37 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0573 },
       { rank: 7, name: 'mfcc11_mean', display_name: 'Timbre MFCC 11', unit: 'dB', value: isNoisy ? -7.5 : -4.8, class_mean: { berisik: -7.77, 'non-berisik': -4.76 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0547 },
-      { rank: 8, name: 'zcr_mean', display_name: 'Zero Crossing Rate (Desis)', unit: '', value: parseFloat(item.zcr_mean.toFixed(4)), class_mean: { berisik: 0.0940, 'non-berisik': 0.0748 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0520 },
-      { rank: 9, name: 'centroid_mean', display_name: 'Pusat Frekuensi Spektral', unit: 'Hz', value: parseFloat(item.centroid_mean.toFixed(1)), class_mean: { berisik: 1784.2, 'non-berisik': 1619.7 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0496 },
+      { rank: 8, name: 'zcr_mean', display_name: 'Zero Crossing Rate (Desis)', unit: '', value: parseFloat(zcrMean.toFixed(4)), class_mean: { berisik: 0.0940, 'non-berisik': 0.0748 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0520 },
+      { rank: 9, name: 'centroid_mean', display_name: 'Pusat Frekuensi Spektral', unit: 'Hz', value: parseFloat(centroidMean.toFixed(1)), class_mean: { berisik: 1784.2, 'non-berisik': 1619.7 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0496 },
       { rank: 10, name: 'mfcc13_mean', display_name: 'Timbre MFCC 13', unit: 'dB', value: isNoisy ? -7.8 : -4.3, class_mean: { berisik: -7.78, 'non-berisik': -4.26 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0494 },
       { rank: 11, name: 'mfcc10_mean', display_name: 'Timbre MFCC 10', unit: 'dB', value: isNoisy ? -1.9 : -1.1, class_mean: { berisik: -1.88, 'non-berisik': -1.09 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0479 },
       { rank: 12, name: 'mfcc8_mean', display_name: 'Timbre MFCC 8', unit: 'dB', value: isNoisy ? -11.0 : -4.3, class_mean: { berisik: -11.38, 'non-berisik': -4.27 }, nearer_class: isNoisy ? 'berisik' : 'non-berisik', importance: 0.0460 },
@@ -61,6 +65,12 @@ export const BandingkanPage: React.FC = () => {
 
   const featuresA = getFeatures(itemA);
   const featuresB = getFeatures(itemB);
+
+  const handleSwap = () => {
+    const temp = selectedIdA;
+    setSelectedIdA(selectedIdB);
+    setSelectedIdB(temp);
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', paddingBottom: '40px' }}>
@@ -94,11 +104,12 @@ export const BandingkanPage: React.FC = () => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Selectors */}
+          {/* Selectors with Swap Button */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '20px'
+            gridTemplateColumns: '1fr auto 1fr',
+            gap: '16px',
+            alignItems: 'center'
           }}>
             {/* Audio A selector */}
             <div className="glass-card" style={{
@@ -130,6 +141,28 @@ export const BandingkanPage: React.FC = () => {
                 ))}
               </select>
             </div>
+
+            {/* Swap Button */}
+            <button
+              onClick={handleSwap}
+              title="Tukar Posisi (Sampel A ↔ Sampel B)"
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--bg-surface-elevated)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'var(--text-primary)',
+                boxShadow: 'var(--shadow-sm)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <GitCompare size={18} />
+            </button>
 
             {/* Audio B selector */}
             <div className="glass-card" style={{
@@ -177,12 +210,12 @@ export const BandingkanPage: React.FC = () => {
                     fontWeight: 700,
                     color: itemA.label === 'berisik' ? '#EF4444' : '#10B981'
                   }}>
-                    {itemA.label.toUpperCase()} ({(itemA.confidence * 100).toFixed(1)}%)
+                    {itemA.label.toUpperCase()} ({((itemA.confidence ?? 0) * 100).toFixed(1)}%)
                   </h3>
                 </div>
                 <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{itemA.filename}</div>
                 <div className="tabular-nums" style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                  Durasi: {itemA.duration_s.toFixed(1)}s • RMS: {itemA.rms_mean.toFixed(4)}
+                  Durasi: {(itemA.duration_s ?? 0).toFixed(1)}s • RMS: {(itemA.rms_mean ?? 0).toFixed(4)}
                 </div>
               </div>
 
@@ -197,18 +230,18 @@ export const BandingkanPage: React.FC = () => {
                     fontWeight: 700,
                     color: itemB.label === 'berisik' ? '#EF4444' : '#10B981'
                   }}>
-                    {itemB.label.toUpperCase()} ({(itemB.confidence * 100).toFixed(1)}%)
+                    {itemB.label.toUpperCase()} ({((itemB.confidence ?? 0) * 100).toFixed(1)}%)
                   </h3>
                 </div>
                 <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{itemB.filename}</div>
                 <div className="tabular-nums" style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                  Durasi: {itemB.duration_s.toFixed(1)}s • RMS: {itemB.rms_mean.toFixed(4)}
+                  Durasi: {(itemB.duration_s ?? 0).toFixed(1)}s • RMS: {(itemB.rms_mean ?? 0).toFixed(4)}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Side-by-side Features Table */}
+          {/* Side-by-side Features Table matched reliably by name */}
           {featuresA.length > 0 && featuresB.length > 0 && (
             <div className="glass-card" style={{
               padding: '24px',
@@ -227,9 +260,10 @@ export const BandingkanPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {featuresA.map((fa, idx) => {
-                    const fb = featuresB[idx];
-                    const diff = fa.value - (fb ? fb.value : 0);
+                  {featuresA.map((fa) => {
+                    const fb = featuresB.find(f => f.name === fa.name);
+                    const fbVal = fb ? fb.value : 0;
+                    const diff = fa.value - fbVal;
                     return (
                       <tr key={fa.name} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                         <td style={{ padding: '12px 10px', fontWeight: 500, color: 'var(--text-primary)' }}>

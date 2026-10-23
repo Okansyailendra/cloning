@@ -4,13 +4,16 @@ import uuid
 import json
 import tempfile
 import asyncio
+import io
+import soundfile as sf
+import librosa
 import numpy as np
 from fastapi import APIRouter, UploadFile, File, Request, Response
 from app.schemas import PredictResponse
 from app.errors import AppError
 from app.config import settings
 from app.services.audio_loader import validate_audio_file, load_and_preprocess_audio
-from app.services.features import extract_features, FEATURE_NAMES, DISPLAY_NAMES, UNITS
+from app.services.features import extract_features, extract_timeline_chunks, FEATURE_NAMES, DISPLAY_NAMES, UNITS
 from app.services.explain import get_layman_explanation
 from app.services.visuals import generate_visual_data
 
@@ -74,7 +77,9 @@ async def predict_audio(request: Request, response: Response, file: UploadFile =
             
         # Features extraction
         t_feat_start = time.time()
-        feature_dict, chunk_features, mfcc_profile = await asyncio.to_thread(extract_features, y_clean, sr=sr)
+        feature_dict, _, mfcc_profile = await asyncio.to_thread(extract_features, y_clean, sr=sr)
+        # Sequential timeline chunks covering the full audio duration from y_raw
+        timeline_chunk_features = await asyncio.to_thread(extract_timeline_chunks, y_raw, sr=sr, chunk_dur=3.0)
         features_ms = int((time.time() - t_feat_start) * 1000)
         
         # Predict
@@ -84,7 +89,7 @@ async def predict_audio(request: Request, response: Response, file: UploadFile =
             raise AppError(503, "MODEL_BELUM_SIAP", "Model sedang dimuat. Coba lagi dalam beberapa detik.")
             
         pred_label, confidence, prob_dict = predictor.predict(feature_dict)
-        chunk_preds = predictor.predict_chunks(chunk_features, chunk_duration_s=3.0)
+        chunk_preds = predictor.predict_chunks(timeline_chunk_features, chunk_duration_s=3.0)
         predict_ms = int((time.time() - t_pred_start) * 1000)
         
         # Confidence warning check
@@ -195,10 +200,6 @@ async def predict_live_chunk(request: Request, response: Response, file: UploadF
     if len(content) == 0:
         raise AppError(400, "FILE_KOSONG", "Buffer audio kosong.")
         
-    import io
-    import soundfile as sf
-    import librosa
-    
     try:
         y, sr = sf.read(io.BytesIO(content))
         if len(y.shape) > 1:
@@ -219,51 +220,95 @@ async def predict_live_chunk(request: Request, response: Response, file: UploadF
     if sr != 22050:
         y = librosa.resample(y, orig_sr=sr, target_sr=22050)
         
-    # Ensure 3 seconds (66,150 samples)
     target_samples = 22050 * 3
     if len(y) < target_samples:
-        y = np.pad(y, (0, target_samples - len(y)), mode='constant')
+        if len(y) > 0:
+            n_rep = int(np.ceil(target_samples / len(y)))
+            y = np.tile(y, n_rep)[:target_samples]
+        else:
+            y = np.zeros(target_samples, dtype=np.float32)
     elif len(y) > target_samples:
         y = y[-target_samples:] # take the most recent 3 seconds
         
-    # Extract features matching retrained model
-    rms_arr = librosa.feature.rms(y=y)
-    cent_arr = librosa.feature.spectral_centroid(y=y, sr=22050)
-    zcr_arr = librosa.feature.zero_crossing_rate(y=y)
-    mfcc_mat = librosa.feature.mfcc(y=y, sr=22050, n_mfcc=13)
-    
-    feat_dict = {
-        'rms_mean': float(np.mean(rms_arr)),
-        'rms_std': float(np.std(rms_arr, ddof=0)),
-        'centroid_mean': float(np.mean(cent_arr)),
-        'zcr_mean': float(np.mean(zcr_arr))
-    }
-    for k in range(13):
-        feat_dict[f'mfcc{k+1}_mean'] = float(np.mean(mfcc_mat[k, :]))
-    
-    predictor = getattr(request.app.state, "predictor", None)
-    if predictor is None or predictor.model is None:
-        raise AppError(503, "MODEL_BELUM_SIAP", "Model sedang dimuat.")
-        
-    pred_label, confidence, prob_dict = predictor.predict(feat_dict)
-    
-    low_confidence = bool(confidence < settings.CONFIDENCE_WARN_THRESHOLD)
-    rms_val = round(feat_dict['rms_mean'], 4)
-    centroid_val = round(feat_dict['centroid_mean'], 1)
-    zcr_val = round(feat_dict['zcr_mean'], 4)
-    
-    # Human-friendly live status
-    if pred_label == 'berisik':
-        if rms_val > 0.08:
-            status_text = "Kondisi Ruangan: BERISIK TINGGI (Aktivitas keras / bising intens)"
-        else:
-            status_text = "Kondisi Ruangan: BERISIK (Suara latar bising terdeteksi)"
+    max_amp = float(np.max(np.abs(y))) if len(y) > 0 else 0.0
+    rms_raw_arr = librosa.feature.rms(y=y)
+    rms_raw_mean = float(np.mean(rms_raw_arr)) if len(rms_raw_arr) > 0 else 0.0
+    peak_rms = float(np.max(rms_raw_arr)) if len(rms_raw_arr) > 0 else 0.0
+
+    # True silence check
+    if max_amp < 1e-4 or rms_raw_mean < 0.003:
+        pred_label = 'non-berisik'
+        confidence = 0.99
+        prob_dict = {'berisik': 0.01, 'non-berisik': 0.99}
+        rms_val = round(max(0.0005, rms_raw_mean), 4)
+        centroid_val = 500.0
+        zcr_val = 0.01
+        feat_dict = {
+            'mfcc1_mean': -500.0,
+            'mfcc3_mean': 0.0,
+            'rms_std': 0.0001
+        }
+        status_text = "Kondisi Ruangan: SANGAT TENANG (Nyaris tanpa kebisingan)"
     else:
-        if rms_val < 0.02:
-            status_text = "Kondisi Ruangan: SANGAT TENANG (Nyaris tanpa kebisingan)"
+        # Check active speech/sound vs silence (matching model training top_db parity)
+        intervals = librosa.effects.split(y, top_db=25)
+        if len(intervals) > 0 and len(intervals) < len(y):
+            y_active = np.concatenate([y[s:e] for s, e in intervals])
+            if len(y_active) >= 11025: # at least 0.5s of sound
+                n_rep = int(np.ceil(target_samples / len(y_active)))
+                y_eval = np.tile(y_active, n_rep)[:target_samples]
+            else:
+                y_eval = y
         else:
-            status_text = "Kondisi Ruangan: NON-BERISIK (Kondisi kerja kondusif)"
+            y_eval = y
+
+        rms_arr = librosa.feature.rms(y=y_eval)
+        cent_arr = librosa.feature.spectral_centroid(y=y_eval, sr=22050)
+        zcr_arr = librosa.feature.zero_crossing_rate(y=y_eval)
+        mfcc_mat = librosa.feature.mfcc(y=y_eval, sr=22050, n_mfcc=13)
+        
+        feat_dict = {
+            'rms_mean': float(np.mean(rms_arr)),
+            'rms_std': float(np.std(rms_arr, ddof=0)),
+            'centroid_mean': float(np.mean(cent_arr)),
+            'zcr_mean': float(np.mean(zcr_arr))
+        }
+        for k in range(13):
+            feat_dict[f'mfcc{k+1}_mean'] = float(np.mean(mfcc_mat[k, :]))
+        
+        predictor = getattr(request.app.state, "predictor", None)
+        if predictor is None or predictor.model is None:
+            raise AppError(503, "MODEL_BELUM_SIAP", "Model sedang dimuat.")
             
+        pred_label, confidence, prob_dict = predictor.predict(feat_dict)
+        
+        rms_val = round(feat_dict['rms_mean'], 4)
+        centroid_val = round(feat_dict['centroid_mean'], 1)
+        zcr_val = round(feat_dict['zcr_mean'], 4)
+
+        # High-amplitude acoustic sanity check:
+        # If the sound has high energy (peak RMS >= 0.10 or mean RMS >= 0.075), it is physically loud/noisy
+        if (rms_val >= 0.075 or peak_rms >= 0.10) and pred_label == 'non-berisik':
+            pred_label = 'berisik'
+            p_berisik = max(prob_dict.get('berisik', 0.0), min(0.95, 0.55 + max(rms_val - 0.075, peak_rms - 0.10) * 3.5))
+            prob_dict['berisik'] = round(p_berisik, 4)
+            prob_dict['non-berisik'] = round(1.0 - p_berisik, 4)
+            confidence = p_berisik
+
+        # Human-friendly live status
+        if pred_label == 'berisik':
+            if rms_val >= 0.075 or peak_rms >= 0.10:
+                status_text = "Kondisi Ruangan: BERISIK TINGGI (Aktivitas keras / bising intens)"
+            else:
+                status_text = "Kondisi Ruangan: BERISIK (Suara latar bising terdeteksi)"
+        else:
+            if rms_val < 0.02:
+                status_text = "Kondisi Ruangan: SANGAT TENANG (Nyaris tanpa kebisingan)"
+            else:
+                status_text = "Kondisi Ruangan: NON-BERISIK (Kondisi kerja kondusif)"
+                
+    low_confidence = bool(confidence < settings.CONFIDENCE_WARN_THRESHOLD)
+    
     import datetime
     now_str = datetime.datetime.now().strftime("%H:%M:%S")
     

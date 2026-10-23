@@ -176,6 +176,13 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     });
   }, [alarmVolume]);
 
+  // Dynamically update active alarm volume if playing
+  useEffect(() => {
+    if (alarmAudioRef.current) {
+      alarmAudioRef.current.volume = alarmVolume;
+    }
+  }, [alarmVolume]);
+
   const forceStopAlarm = useCallback(() => {
     if (alarmAudioRef.current) {
       try {
@@ -191,6 +198,23 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     setActiveAlarmLevel('none');
     setTestingAlarm(null);
   }, []);
+
+  // Cleanup all audio resources on unmount
+  useEffect(() => {
+    return () => {
+      if (rollingTimerRef.current) clearInterval(rollingTimerRef.current);
+      if (stopwatchTimerRef.current) clearInterval(stopwatchTimerRef.current);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(() => {});
+        audioCtxRef.current = null;
+      }
+      forceStopAlarm();
+    };
+  }, [forceStopAlarm]);
 
   const handleTestAlarm = (type: 'medium' | 'high') => {
     if (isAlarmPlayingRef.current) return;
@@ -395,6 +419,17 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // Threshold labels on the right edge
+    ctx.font = '10px Inter, sans-serif';
+    ctx.fillStyle = '#EF4444';
+    ctx.fillText('90% Bahaya', padLeft + chartWidth + 6, yDanger + 3);
+
+    ctx.fillStyle = '#F59E0B';
+    ctx.fillText('70% Waspada', padLeft + chartWidth + 6, yWarn + 3);
+
+    ctx.fillStyle = '#94A3B8';
+    ctx.fillText('0% Tenang', padLeft + chartWidth + 6, height - padBottom + 3);
+
     if (history.length < 2) return;
 
     const points = history.map((pt, i) => {
@@ -404,10 +439,13 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       return { x, y, pct };
     });
 
+    const lastPoint = points[points.length - 1];
+    const strokeColor = lastPoint.pct >= 0.90 ? '#EF4444' : (lastPoint.pct >= 0.70 ? '#F59E0B' : '#10B981');
+
     // Area fill
     const grad = ctx.createLinearGradient(0, padTop, 0, height - padBottom);
-    grad.addColorStop(0, 'rgba(255, 92, 38, 0.25)');
-    grad.addColorStop(1, 'rgba(255, 92, 38, 0.0)');
+    grad.addColorStop(0, lastPoint.pct >= 0.70 ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.20)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
 
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
@@ -424,7 +462,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     ctx.fill();
 
     // Spline stroke
-    ctx.strokeStyle = '#FF5C26';
+    ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
@@ -439,7 +477,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     // Point dots
     points.forEach((p, idx) => {
       if (idx === points.length - 1) {
-        ctx.fillStyle = '#FF5C26';
+        ctx.fillStyle = strokeColor;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
         ctx.fill();
@@ -512,11 +550,11 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     setElapsedSec(0);
 
     const nowStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const initialBuffer: LiveHistoryPoint[] = Array.from({ length: 30 }, (_, i) => ({
+    const initialBuffer: LiveHistoryPoint[] = Array.from({ length: 30 }, () => ({
       time: nowStr,
       label: 'non-berisik',
-      confidence: 0.88 - (Math.sin(i * 0.4) * 0.04),
-      rms: 0.012 + (Math.sin(i * 0.3) * 0.003)
+      confidence: 0.95,
+      rms: 0.005
     }));
     setHistory(initialBuffer);
     setTotalChecks(0);
@@ -562,8 +600,12 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
         }
       };
 
+      // Mute gain node to prevent audio feedback loop to speakers
+      const muteNode = ctx.createGain();
+      muteNode.gain.value = 0;
       source.connect(scriptNode);
-      scriptNode.connect(ctx.destination);
+      scriptNode.connect(muteNode);
+      muteNode.connect(ctx.destination);
 
       setIsActive(true);
 
@@ -639,8 +681,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   const isNoisy = liveData?.label === 'berisik';
   const noisePercent = liveData
     ? Math.round((liveData.probabilities.berisik !== undefined ? liveData.probabilities.berisik : (liveData.label === 'berisik' ? liveData.confidence : 1 - liveData.confidence)) * 100)
-    : (isActive ? 34 : 0);
-
+    : 0;
 
   // Multi-step Segmented Bar Meter (22 tick marks, exact match with reference)
   const TOTAL_BARS = 22;
@@ -649,25 +690,25 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   // Dynamic 5 Feature Metrics for Card 4 (Live data-driven)
   const featMfcc1Val = liveData
     ? (liveData.mfcc1 !== undefined ? `${liveData.mfcc1.toFixed(1)} dB` : `${(-260 + liveData.rms * 350).toFixed(1)} dB`)
-    : '-200.8 dB';
-  const featMfcc1Pct = liveData ? Math.min(100, Math.max(20, Math.round(Math.abs(parseFloat(featMfcc1Val)) / 3.2))) : 62;
+    : (isActive ? 'Membaca...' : '- dB');
+  const featMfcc1Pct = liveData ? Math.min(100, Math.max(20, Math.round(Math.abs(parseFloat(featMfcc1Val)) / 3.2))) : (isActive ? 40 : 10);
 
   const featMfcc3Val = liveData
     ? (liveData.mfcc3 !== undefined ? `${liveData.mfcc3.toFixed(1)} dB` : `${(-34.8 + (liveData.label === 'berisik' ? 2.5 : 23.6)).toFixed(1)} dB`)
-    : '-34.8 dB';
-  const featMfcc3Pct = liveData ? Math.min(100, Math.max(20, Math.round(Math.abs(parseFloat(featMfcc3Val)) * 2.2))) : 75;
+    : (isActive ? 'Membaca...' : '- dB');
+  const featMfcc3Pct = liveData ? Math.min(100, Math.max(20, Math.round(Math.abs(parseFloat(featMfcc3Val)) * 2.2))) : (isActive ? 40 : 10);
 
-  const featRmsVal = liveData ? `${(liveData.rms * 100).toFixed(1)} %` : '9.6 %';
-  const featRmsPct = liveData ? Math.min(100, Math.max(18, Math.round(liveData.rms * 450))) : 48;
+  const featRmsVal = liveData ? `${(liveData.rms * 100).toFixed(1)} %` : (isActive ? '0.0 %' : '0.0 %');
+  const featRmsPct = liveData ? Math.min(100, Math.max(18, Math.round(liveData.rms * 450))) : (isActive ? 15 : 6);
   const featRmsAlert = liveData ? (liveData.rms >= 0.05 || isNoisy) : false;
 
   const featDynStdVal = liveData
     ? (liveData.rms_std !== undefined ? `${(liveData.rms_std * 100).toFixed(1)} %` : `${(Math.max(0.008, liveData.rms * 0.45) * 100).toFixed(1)} %`)
-    : '4.8 %';
-  const featDynStdPct = liveData ? Math.min(100, Math.max(20, Math.round(parseFloat(featDynStdVal) * 8))) : 50;
+    : (isActive ? '0.0 %' : '0.0 %');
+  const featDynStdPct = liveData ? Math.min(100, Math.max(20, Math.round(parseFloat(featDynStdVal) * 8))) : (isActive ? 15 : 6);
 
-  const featZcrVal = liveData ? `${(liveData.zcr * 100).toFixed(1)} %` : '9.4 %';
-  const featZcrPct = liveData ? Math.min(100, Math.max(15, Math.round(liveData.zcr * 400))) : 30;
+  const featZcrVal = liveData ? `${(liveData.zcr * 100).toFixed(1)} %` : (isActive ? '0.0 %' : '0.0 %');
+  const featZcrPct = liveData ? Math.min(100, Math.max(15, Math.round(liveData.zcr * 400))) : (isActive ? 15 : 6);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', width: '100%' }}>
@@ -884,7 +925,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
             <div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                 <span style={{ fontSize: '26px', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
-                  {liveData ? (liveData.confidence * 100).toFixed(1) : '92.5'}
+                  {liveData ? (liveData.confidence * 100).toFixed(1) : (isActive ? '...' : '--')}
                 </span>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>%</span>
               </div>
@@ -954,10 +995,10 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: '4px',
-                    backgroundColor: isNoisy ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-                    color: isNoisy ? '#EF4444' : '#10B981'
+                    backgroundColor: !liveData ? 'rgba(0, 0, 0, 0.06)' : (isNoisy ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)'),
+                    color: !liveData ? 'var(--text-secondary)' : (isNoisy ? '#EF4444' : '#10B981')
                   }}>
-                    {isNoisy ? '🚨 Berisik' : '✓ Non-Berisik (Tenang)'}
+                    {!liveData ? (isActive ? 'Mendengarkan...' : '○ Standby') : (isNoisy ? '🚨 Berisik' : '✓ Non-Berisik (Tenang)')}
                   </span>
                 </div>
 
@@ -965,7 +1006,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Intensitas Bunyi (RMS)</span>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                    {liveData ? liveData.rms.toFixed(4) : '0.0955'}
+                    {liveData ? liveData.rms.toFixed(4) : (isActive ? 'Membaca...' : '0.0000')}
                   </span>
                 </div>
 
@@ -973,7 +1014,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Fluktuasi Dinamika (RMS Std)</span>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                    {liveData ? (liveData.rms_std ? liveData.rms_std.toFixed(4) : (liveData.rms * 0.45).toFixed(4)) : '0.0479'}
+                    {liveData ? (liveData.rms_std ? liveData.rms_std.toFixed(4) : (liveData.rms * 0.45).toFixed(4)) : (isActive ? 'Membaca...' : '0.0000')}
                   </span>
                 </div>
 
@@ -981,7 +1022,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Kerapatan Desis (ZCR)</span>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                    {liveData ? liveData.zcr.toFixed(4) : '0.0940'}
+                    {liveData ? liveData.zcr.toFixed(4) : (isActive ? 'Membaca...' : '0.0000')}
                   </span>
                 </div>
 
@@ -989,7 +1030,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Pusat Frekuensi (Centroid)</span>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                    {liveData ? `${liveData.centroid_hz.toFixed(0)} Hz` : '1784 Hz'}
+                    {liveData ? `${liveData.centroid_hz.toFixed(0)} Hz` : (isActive ? 'Membaca...' : '-- Hz')}
                   </span>
                 </div>
               </div>
@@ -1183,25 +1224,32 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 width: '110px',
                 height: '110px',
                 borderRadius: '50%',
-                border: '2px dashed var(--accent-orange)',
-                backgroundColor: 'rgba(251, 91, 42, 0.04)',
+                border: `2px dashed ${liveData ? (isNoisy ? '#EF4444' : '#10B981') : 'var(--accent-orange)'}`,
+                backgroundColor: liveData ? (isNoisy ? 'rgba(239, 68, 68, 0.04)' : 'rgba(16, 185, 129, 0.04)') : 'rgba(251, 91, 42, 0.04)',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>Keyakinan</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  {liveData ? 'Keyakinan' : (isActive ? 'Mendeteksi' : 'Status')}
+                </span>
                 <span style={{
-                  fontSize: '26px',
+                  fontSize: '24px',
                   fontWeight: 800,
                   color: 'var(--text-primary)',
                   fontFamily: 'var(--font-display)',
                   lineHeight: 1.1
                 }}>
-                  {liveData ? Math.round((liveData.confidence || 0.925) * 100) : 93}%
+                  {liveData ? `${Math.round(liveData.confidence * 100)}%` : (isActive ? '...' : '0%')}
                 </span>
-                <span style={{ fontSize: '9px', color: 'var(--accent-orange)', fontWeight: 700, marginTop: '2px' }}>
-                  {liveData ? liveData.label.toUpperCase() : 'STANDBY'}
+                <span style={{
+                  fontSize: '9px',
+                  color: liveData ? (isNoisy ? '#EF4444' : '#10B981') : 'var(--accent-orange)',
+                  fontWeight: 700,
+                  marginTop: '2px'
+                }}>
+                  {liveData ? liveData.label.toUpperCase() : (isActive ? 'MENDENGARKAN' : 'STANDBY')}
                 </span>
               </div>
 

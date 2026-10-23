@@ -154,12 +154,12 @@ export function exportHistoryToCsv(items: HistoryItem[]): void {
     item.id,
     item.timestamp,
     `"${item.filename.replace(/"/g, '""')}"`,
-    item.duration_s.toFixed(2),
+    (item.duration_s ?? 0).toFixed(2),
     item.label,
-    (item.confidence * 100).toFixed(1) + '%',
-    item.rms_mean.toFixed(6),
-    item.centroid_mean.toFixed(2),
-    item.zcr_mean.toFixed(6)
+    ((item.confidence ?? 0) * 100).toFixed(1) + '%',
+    (item.rms_mean ?? 0).toFixed(6),
+    (item.centroid_mean ?? 0).toFixed(2),
+    (item.zcr_mean ?? 0).toFixed(6)
   ]);
 
   const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');

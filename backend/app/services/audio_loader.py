@@ -1,4 +1,4 @@
-﻿import os
+import os
 import io
 import time
 import librosa
@@ -13,7 +13,8 @@ MAGIC_BYTES = {
     b'\xff\xf2': '.mp3',
     b'RIFF': '.wav',
     b'OggS': '.ogg',
-    b'fLaC': '.flac'
+    b'fLaC': '.flac',
+    b'\x1a\x45\xdf\xa3': '.webm'
 }
 
 def validate_audio_file(file_bytes: bytes, filename: str, max_mb: int = 15):
@@ -28,11 +29,11 @@ def validate_audio_file(file_bytes: bytes, filename: str, max_mb: int = 15):
         raise AppError(400, "FILE_KOSONG", "File kosong (0 byte). Pilih file audio yang berisi rekaman.")
         
     ext = os.path.splitext(filename)[1].lower()
-    allowed_exts = ['.mp3', '.wav', '.ogg', '.flac', '.m4a']
+    allowed_exts = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.webm']
     if ext not in allowed_exts:
         raise AppError(
             415, "FORMAT_TIDAK_DIDUKUNG",
-            "Format file tidak didukung. Gunakan MP3, WAV, OGG, FLAC, atau M4A.",
+            "Format file tidak didukung. Gunakan MP3, WAV, OGG, FLAC, M4A, atau WEBM.",
             {"extension": ext, "allowed": allowed_exts}
         )
 
