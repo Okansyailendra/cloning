@@ -64,6 +64,7 @@ def load_and_preprocess_audio(audio_path: str, target_sr: int = 22050, top_db: i
         y_clean = np.concatenate(parts)
     else:
         y_clean = y_raw
+        active_intervals = [[0.0, float(round(duration_s, 2))]]
 
     processed_duration_s = float(len(y_clean) / sr)
     silence_removed_s = float(max(0.0, duration_s - processed_duration_s))

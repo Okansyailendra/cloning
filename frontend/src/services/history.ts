@@ -44,6 +44,20 @@ export function clearHistory(): void {
   }
 }
 
+export function deleteHistoryItem(id: string): void {
+  try {
+    const current = getHistory();
+    const updated = current.filter(h => h.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('soundlab_history_updated', { detail: updated }));
+    }
+  } catch (e) {
+    console.warn('Gagal menghapus item riwayat:', e);
+  }
+}
+
 export function createLiveSessionHistoryItem(params: {
   duration_s: number;
   totalChecks: number;

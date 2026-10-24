@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getHistory } from '../services/history';
 import type { HistoryItem, FeatureItem } from '../types/api';
-import { GitCompare, Volume2, VolumeX } from 'lucide-react';
+import { GitCompare, Volume2, VolumeX, AlertCircle } from 'lucide-react';
 
 export const BandingkanPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const paramA = searchParams.get('a');
+  const paramB = searchParams.get('b');
+
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [selectedIdA, setSelectedIdA] = useState<string>('');
   const [selectedIdB, setSelectedIdB] = useState<string>('');
@@ -12,10 +18,20 @@ export const BandingkanPage: React.FC = () => {
     const items = getHistory();
     setHistoryItems(items);
     if (items.length >= 1) {
-      setSelectedIdA(prev => (prev && items.some(i => i.id === prev) ? prev : items[0].id));
+      setSelectedIdA(prev => {
+        if (paramA && items.some(i => i.id === paramA)) return paramA;
+        if (prev && items.some(i => i.id === prev)) return prev;
+        return items[0].id;
+      });
     }
     if (items.length >= 2) {
-      setSelectedIdB(prev => (prev && items.some(i => i.id === prev) ? prev : items[1].id));
+      setSelectedIdB(prev => {
+        if (paramB && items.some(i => i.id === paramB)) return paramB;
+        if (prev && items.some(i => i.id === prev)) return prev;
+        const initialA = paramA && items.some(i => i.id === paramA) ? paramA : (items[0]?.id ?? '');
+        const other = items.find(i => i.id !== initialA);
+        return other ? other.id : items[1].id;
+      });
     }
   };
 
@@ -29,7 +45,7 @@ export const BandingkanPage: React.FC = () => {
       window.removeEventListener('soundlab_history_updated', handleUpdate);
       window.removeEventListener('storage', handleUpdate);
     };
-  }, []);
+  }, [paramA, paramB]);
 
   const itemA = historyItems.find(h => h.id === selectedIdA);
   const itemB = historyItems.find(h => h.id === selectedIdB);
@@ -92,18 +108,58 @@ export const BandingkanPage: React.FC = () => {
       {historyItems.length < 2 ? (
         <div className="glass-card" style={{
           padding: '60px 20px',
-          textAlign: 'center'
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px'
         }}>
-          <GitCompare size={32} style={{ color: 'var(--accent-quiet)', margin: '0 auto 12px' }} />
-          <p style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '15px', marginBottom: '6px' }}>
+          <GitCompare size={36} style={{ color: 'var(--accent-quiet)', margin: '0 auto 4px' }} />
+          <h2 style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '16px' }}>
             Dibutuhkan minimal 2 rekaman audio dalam riwayat
+          </h2>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', maxWidth: '520px', lineHeight: 1.5 }}>
+            Silakan lakukan analisis minimal 2 berkas audio atau sesi monitoring mikrofon terlebih dahulu pada halaman Analisis.
           </p>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Silakan lakukan analisis minimal 2 berkas audio atau sesi monitoring real-time terlebih dahulu pada halaman Analisis.
-          </p>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              marginTop: '8px',
+              padding: '10px 22px',
+              backgroundColor: 'var(--accent-quiet)',
+              color: '#0B0F14',
+              borderRadius: 'var(--radius-pill)',
+              fontWeight: 600,
+              fontSize: '13px',
+              boxShadow: 'var(--shadow-sm)',
+              cursor: 'pointer'
+            }}
+          >
+            Buka Halaman Analisis
+          </button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Identical Selection Alert */}
+          {selectedIdA === selectedIdB && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '12px 16px',
+              backgroundColor: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: 'var(--radius-md)',
+              color: '#D97706',
+              fontSize: '13px'
+            }}>
+              <AlertCircle size={18} style={{ flexShrink: 0 }} />
+              <span>
+                Perhatian: Anda memilih rekaman yang sama untuk Audio A dan Audio B. Nilai selisih akan bernilai nol. Silakan pilih dua rekaman berbeda untuk membandingkan perbedaan akustik.
+              </span>
+            </div>
+          )}
+
           {/* Selectors with Swap Button */}
           <div style={{
             display: 'grid',
@@ -264,25 +320,35 @@ export const BandingkanPage: React.FC = () => {
                     const fb = featuresB.find(f => f.name === fa.name);
                     const fbVal = fb ? fb.value : 0;
                     const diff = fa.value - fbVal;
+                    const isZero = Math.abs(diff) < 1e-5;
+                    const diffColor = isZero ? 'var(--text-muted)' : (diff > 0 ? '#F59E0B' : '#10B981');
+                    const diffSign = isZero ? '' : (diff > 0 ? '+' : '');
+
+                    const formatVal = (v: number) => {
+                      if (fa.name === 'centroid_mean') return v.toFixed(1);
+                      if (fa.name === 'rms_mean' || fa.name === 'rms_std' || fa.name === 'zcr_mean') return v.toFixed(4);
+                      return v.toFixed(2);
+                    };
+
                     return (
                       <tr key={fa.name} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                         <td style={{ padding: '12px 10px', fontWeight: 500, color: 'var(--text-primary)' }}>
                           {fa.display_name} <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({fa.name})</span>
                         </td>
                         <td className="tabular-nums" style={{ padding: '12px 10px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                          {fa.value} {fa.unit ? fa.unit : ''}
+                          {formatVal(fa.value)} {fa.unit ? fa.unit : ''}
                         </td>
                         <td className="tabular-nums" style={{ padding: '12px 10px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                          {fb ? `${fb.value} ${fb.unit ? fb.unit : ''}` : '-'}
+                          {fb ? `${formatVal(fb.value)} ${fb.unit ? fb.unit : ''}` : '-'}
                         </td>
                         <td className="tabular-nums" style={{
                           padding: '12px 10px',
                           textAlign: 'right',
                           fontFamily: 'var(--font-mono)',
                           fontWeight: 600,
-                          color: diff > 0 ? '#F59E0B' : '#10B981'
+                          color: diffColor
                         }}>
-                          {diff > 0 ? `+${diff.toFixed(4)}` : diff.toFixed(4)}
+                          {isZero ? '0.0000' : `${diffSign}${diff.toFixed(4)}`}
                         </td>
                       </tr>
                     );

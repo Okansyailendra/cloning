@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getHistory, clearHistory, exportHistoryToCsv } from '../services/history';
+import { getHistory, clearHistory, deleteHistoryItem, exportHistoryToCsv } from '../services/history';
 import type { HistoryItem } from '../types/api';
-import { Download, Trash2, Volume2, VolumeX, GitCompare } from 'lucide-react';
+import { Download, Trash2, Volume2, VolumeX, GitCompare, ArrowRight } from 'lucide-react';
 
 export const RiwayatPage: React.FC = () => {
   const navigate = useNavigate();
@@ -28,6 +28,14 @@ export const RiwayatPage: React.FC = () => {
     if (window.confirm('Hapus seluruh riwayat analisis dalam sesi ini?')) {
       clearHistory();
       setItems([]);
+    }
+  };
+
+  const handleDeleteItem = (id: string, filename: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`Hapus rekaman "${filename}" dari riwayat?`)) {
+      deleteHistoryItem(id);
+      setItems(prev => prev.filter(i => i.id !== id));
     }
   };
 
@@ -116,14 +124,37 @@ export const RiwayatPage: React.FC = () => {
       {items.length === 0 ? (
         <div className="glass-card" style={{
           padding: '60px 20px',
-          textAlign: 'center'
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px'
         }}>
-          <p style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '15px', marginBottom: '6px' }}>
+          <p style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '15px' }}>
             Belum ada riwayat analisis
           </p>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '480px' }}>
             Lakukan analisis audio atau aktifkan deteksi real-time untuk mencatat data pengujian di sini.
           </p>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              marginTop: '8px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '9px 20px',
+              backgroundColor: 'var(--accent-quiet)',
+              color: '#0B0F14',
+              borderRadius: 'var(--radius-pill)',
+              fontWeight: 600,
+              fontSize: '13px',
+              cursor: 'pointer'
+            }}
+          >
+            <span>Mulai Analisis Audio</span>
+            <ArrowRight size={14} />
+          </button>
         </div>
       ) : (
         <div className="glass-card" style={{ overflowX: 'auto', padding: '8px' }}>
@@ -143,6 +174,7 @@ export const RiwayatPage: React.FC = () => {
                 <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600 }}>RMS (Vol)</th>
                 <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600 }}>Centroid (Hz)</th>
                 <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600 }}>ZCR</th>
+                <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -190,6 +222,47 @@ export const RiwayatPage: React.FC = () => {
                     </td>
                     <td className="tabular-nums" style={{ padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
                       {(it.zcr_mean ?? 0).toFixed(4)}
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          onClick={() => navigate(`/bandingkan?a=${it.id}`)}
+                          title="Bandingkan audio ini"
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: 'var(--bg-surface-elevated)',
+                            border: '1px solid var(--border-subtle)',
+                            color: 'var(--text-primary)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '11px',
+                            fontWeight: 500
+                          }}
+                        >
+                          <GitCompare size={13} style={{ color: 'var(--accent-orange)' }} />
+                          <span>Bandingkan</span>
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteItem(it.id, it.filename, e)}
+                          title="Hapus rekaman ini"
+                          style={{
+                            padding: '6px 8px',
+                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            color: '#EF4444',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

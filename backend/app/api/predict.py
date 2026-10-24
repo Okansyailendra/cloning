@@ -209,14 +209,22 @@ async def predict_live_chunk(request: Request, response: Response, file: UploadF
         # Fallback to temp file if soundfile memory read fails
         import tempfile
         t_path = os.path.join(tempfile.gettempdir(), f"live_{uuid.uuid4()}.wav")
-        with open(t_path, "wb") as f_tmp:
-            f_tmp.write(content)
-        y, sr = librosa.load(t_path, sr=22050, mono=True)
         try:
-            os.remove(t_path)
-        except Exception:
-            pass
+            with open(t_path, "wb") as f_tmp:
+                f_tmp.write(content)
+            y, sr = librosa.load(t_path, sr=22050, mono=True)
+        except Exception as e:
+            raise AppError(422, "AUDIO_RUSAK", f"Buffer audio live tidak dapat didekode: {str(e)}")
+        finally:
+            if os.path.exists(t_path):
+                try:
+                    os.remove(t_path)
+                except Exception:
+                    pass
             
+    if len(y) == 0:
+        raise AppError(400, "AUDIO_KOSONG", "Buffer audio live tidak memiliki sinyal data.")
+
     if sr != 22050:
         y = librosa.resample(y, orig_sr=sr, target_sr=22050)
         

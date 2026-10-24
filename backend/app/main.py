@@ -115,6 +115,17 @@ if os.path.exists(frontend_dist):
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
+        if full_path.startswith("api/"):
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "error": {
+                        "code": "ENDPOINT_TIDAK_DITEMUKAN",
+                        "message": f"Endpoint '/{full_path}' tidak ditemukan.",
+                        "detail": {}
+                    }
+                }
+            )
         file_path = os.path.join(frontend_dist, full_path)
         if full_path and os.path.exists(file_path) and os.path.isfile(file_path):
             return FileResponse(file_path)

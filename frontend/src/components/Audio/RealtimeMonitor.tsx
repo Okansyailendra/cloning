@@ -372,9 +372,9 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     const width = canvas.width;
     const height = canvas.height;
     const padLeft = 40;
-    const padRight = 60;
+    const padRight = 125;
     const padTop = 20;
-    const padBottom = 30;
+    const padBottom = 32;
 
     const chartWidth = width - padLeft - padRight;
     const chartHeight = height - padTop - padBottom;
@@ -403,7 +403,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       ctx.stroke();
     }
 
-    // Danger line
+    // Danger line (90% Sangat Berisik)
     ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -411,7 +411,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     ctx.lineTo(padLeft + chartWidth, yDanger);
     ctx.stroke();
 
-    // Warning line
+    // Warning line (70% Berisik)
     ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
     ctx.beginPath();
     ctx.moveTo(padLeft, yWarn);
@@ -419,22 +419,58 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Threshold labels on the right edge
+    // Threshold labels on the right edge (clear room, never truncated)
     ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
     ctx.fillStyle = '#EF4444';
-    ctx.fillText('90% Bahaya', padLeft + chartWidth + 6, yDanger + 3);
+    ctx.fillText('90% Sangat Berisik', padLeft + chartWidth + 8, yDanger);
 
     ctx.fillStyle = '#F59E0B';
-    ctx.fillText('70% Waspada', padLeft + chartWidth + 6, yWarn + 3);
+    ctx.fillText('70% Berisik', padLeft + chartWidth + 8, yWarn);
 
+    ctx.fillStyle = '#64748B';
+    ctx.fillText('0% Tenang', padLeft + chartWidth + 8, height - padBottom);
+
+    // Time markers along bottom axis
+    ctx.font = '9px Inter, sans-serif';
     ctx.fillStyle = '#94A3B8';
-    ctx.fillText('0% Tenang', padLeft + chartWidth + 6, height - padBottom + 3);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const timeLabels = ['-30s', '-25s', '-20s', '-15s', '-10s', '-5s', 'Sekarang'];
+    for (let s = 0; s <= 6; s++) {
+      const gx = padLeft + (s / 6) * chartWidth;
+      ctx.fillText(timeLabels[s], gx, height - padBottom + 6);
+    }
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
 
-    if (history.length < 2) return;
+    if (history.length === 0) return;
+
+    if (history.length === 1) {
+      const pt = history[0];
+      const pct = pt.noisePercent !== undefined
+        ? pt.noisePercent / 100
+        : (pt.label === 'berisik' ? pt.confidence : 1 - pt.confidence);
+      const x = padLeft + chartWidth;
+      const y = padTop + (1 - pct) * chartHeight;
+      const strokeColor = pct >= 0.90 ? '#EF4444' : (pct >= 0.70 ? '#F59E0B' : '#10B981');
+      ctx.fillStyle = strokeColor;
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      return;
+    }
 
     const points = history.map((pt, i) => {
       const x = padLeft + (i / (history.length - 1)) * chartWidth;
-      const pct = pt.label === 'berisik' ? pt.confidence : 1 - pt.confidence;
+      const pct = pt.noisePercent !== undefined
+        ? pt.noisePercent / 100
+        : (pt.label === 'berisik' ? pt.confidence : 1 - pt.confidence);
       const y = padTop + (1 - pct) * chartHeight;
       return { x, y, pct };
     });
@@ -530,7 +566,8 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
           time: res.timestamp,
           label: res.label,
           confidence: res.confidence,
-          rms: res.rms
+          rms: res.rms,
+          noisePercent: noisePercent
         }];
         return next.slice(-30);
       });
@@ -647,12 +684,17 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     const curElapsed = elapsedSecRef.current;
     const curTotal = totalChecksRef.current;
     if (curElapsed >= 3 && curTotal > 0) {
+      const curHistory = historyRef.current;
+      const calculatedAvgRms = curHistory.length > 0
+        ? curHistory.reduce((acc, p) => acc + (p.rms || 0), 0) / curHistory.length
+        : (liveDataRef.current ? liveDataRef.current.rms : 0.02);
+
       const item = createLiveSessionHistoryItem({
         duration_s: curElapsed,
         totalChecks: curTotal,
         noisyChecks: noisyChecksRef.current,
         peakRms: peakRmsRef.current,
-        avgRms: liveDataRef.current ? liveDataRef.current.rms : 0.02,
+        avgRms: calculatedAvgRms,
         centroid_hz: liveDataRef.current ? liveDataRef.current.centroid_hz : 1400,
         zcr: liveDataRef.current ? liveDataRef.current.zcr : 0.05
       });

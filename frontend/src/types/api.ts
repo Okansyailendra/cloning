@@ -221,4 +221,5 @@ export interface LiveHistoryPoint {
   label: 'berisik' | 'non-berisik';
   confidence: number;
   rms: number;
+  noisePercent?: number;
 }
