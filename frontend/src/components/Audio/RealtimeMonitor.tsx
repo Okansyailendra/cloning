@@ -17,44 +17,7 @@ import {
 import { predictLiveAudio } from '../../services/api';
 import { saveHistoryItem, createLiveSessionHistoryItem } from '../../services/history';
 import type { LivePredictResponse, LiveHistoryPoint } from '../../types/api';
-
-// Helper to encode Float32Array to 16-bit PCM WAV Blob
-function encodeWAV(samples: Float32Array, sampleRate: number): Blob {
-  const buffer = new ArrayBuffer(44 + samples.length * 2);
-  const view = new DataView(buffer);
-
-  // RIFF identifier
-  writeString(view, 0, 'RIFF');
-  view.setUint32(4, 36 + samples.length * 2, true);
-  writeString(view, 8, 'WAVE');
-  // format chunk identifier
-  writeString(view, 12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true); // PCM
-  view.setUint16(22, 1, true); // mono
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true); // byte rate
-  view.setUint16(32, 2, true); // block align
-  view.setUint16(34, 16, true); // 16-bit
-  // data chunk identifier
-  writeString(view, 36, 'data');
-  view.setUint32(40, samples.length * 2, true);
-
-  // Write PCM samples
-  let offset = 44;
-  for (let i = 0; i < samples.length; i++, offset += 2) {
-    const s = Math.max(-1, Math.min(1, samples[i]));
-    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-  }
-
-  return new Blob([view], { type: 'audio/wav' });
-}
-
-function writeString(view: DataView, offset: number, string: string) {
-  for (let i = 0; i < string.length; i++) {
-    view.setUint8(offset + i, string.charCodeAt(i));
-  }
-}
+import { encodeWAV } from '../../utils/wavEncoder';
 
 interface RealtimeMonitorProps {
   viewMode: 'realtime' | 'file';
@@ -117,6 +80,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   const totalChecksRef = useRef<number>(0);
   const noisyChecksRef = useRef<number>(0);
   const peakRmsRef = useRef<number>(0);
+  const realRmsSumRef = useRef<number>(0);
   const historyRef = useRef<LiveHistoryPoint[]>([]);
   const liveDataRef = useRef<LivePredictResponse | null>(null);
 
@@ -556,6 +520,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       }
 
       setTotalChecks(prev => prev + 1);
+      realRmsSumRef.current += res.rms;
       if (res.label === 'berisik') {
         setNoisyChecks(prev => prev + 1);
       }
@@ -597,6 +562,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     setTotalChecks(0);
     setNoisyChecks(0);
     setPeakRms(0);
+    realRmsSumRef.current = 0;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -684,9 +650,9 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     const curElapsed = elapsedSecRef.current;
     const curTotal = totalChecksRef.current;
     if (curElapsed >= 3 && curTotal > 0) {
-      const curHistory = historyRef.current;
-      const calculatedAvgRms = curHistory.length > 0
-        ? curHistory.reduce((acc, p) => acc + (p.rms || 0), 0) / curHistory.length
+      // Calculate true average RMS from real live prediction checks only (ignoring placeholder dots)
+      const calculatedAvgRms = curTotal > 0
+        ? (realRmsSumRef.current / curTotal)
         : (liveDataRef.current ? liveDataRef.current.rms : 0.02);
 
       const item = createLiveSessionHistoryItem({
@@ -708,6 +674,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     setTotalChecks(0);
     setNoisyChecks(0);
     setPeakRms(0);
+    realRmsSumRef.current = 0;
     setHistory([]);
     setLiveData(null);
     latestNoisePercentRef.current = 0;

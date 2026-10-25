@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, AlertCircle } from 'lucide-react';
+import { convertBlobToWav } from '../../utils/wavEncoder';
 
 interface MicRecorderProps {
   onAudioRecorded: (blob: Blob, filename: string) => void;
@@ -62,11 +63,9 @@ export const MicRecorder: React.FC<MicRecorderProps> = ({ onAudioRecorded, isLoa
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const mimeType = mediaRecorder.mimeType || 'audio/webm';
-        const ext = mimeType.includes('wav') ? 'wav' : 'webm';
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        const filename = `rekaman-mikrofon-${new Date().toISOString().replace(/[:.]/g, '-')}.${ext}`;
+        const rawBlob = new Blob(audioChunksRef.current, { type: mimeType });
         
         // Stop audio tracks
         if (streamRef.current) {
@@ -84,7 +83,17 @@ export const MicRecorder: React.FC<MicRecorderProps> = ({ onAudioRecorded, isLoa
           return;
         }
 
-        onAudioRecorded(audioBlob, filename);
+        try {
+          // Convert WebM to standard 16-bit PCM WAV for guaranteed backend decoding without server-side ffmpeg
+          const wavBlob = await convertBlobToWav(rawBlob);
+          const filename = `rekaman-mikrofon-${new Date().toISOString().replace(/[:.]/g, '-')}.wav`;
+          onAudioRecorded(wavBlob, filename);
+        } catch (e: any) {
+          console.warn('Gagal mengonversi rekaman ke WAV, menggunakan blob asli:', e);
+          const ext = mimeType.includes('wav') ? 'wav' : 'webm';
+          const filename = `rekaman-mikrofon-${new Date().toISOString().replace(/[:.]/g, '-')}.${ext}`;
+          onAudioRecorded(rawBlob, filename);
+        }
       };
 
       mediaRecorder.start(200); // 200ms slice

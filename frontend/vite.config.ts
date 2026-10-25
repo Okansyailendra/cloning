@@ -14,6 +14,10 @@ export default defineConfig({
       '/samples': {
         target: 'http://localhost:8080',
         changeOrigin: true
+      },
+      '/audio_alarm': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
       }
     }
   }

@@ -74,7 +74,7 @@ def load_and_preprocess_audio(audio_path: str, target_sr: int = 22050, top_db: i
     warnings_list = []
     if len(y_clean) < min_samples:
         y_clean = np.pad(y_clean, (0, min_samples - len(y_clean)), mode='constant')
-        warnings_list.append("Audio setelah dibuang hening kurang dari 3 detik; dilakukan zero-padding untuk melengkapi 1 chunk.")
+        warnings_list.append("AUDIO_PENDEK_DIPAD")
 
     return {
         "y_raw": y_raw,

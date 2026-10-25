@@ -13,10 +13,17 @@ def test_feature_parity():
     csv_path = os.path.join(base_dir, "data", "train_data.csv")
     df = pd.read_csv(csv_path)
 
-    audio_dirs = [
-        r"C:\Users\OKAN\OneDrive\Dokumen\PSD\materi\audio\berisik",
-        r"C:\Users\OKAN\OneDrive\Dokumen\PSD\materi\audio\non-berisik"
-    ]
+    # Configurable audio directories with environment variable support
+    env_dir = os.getenv("AUDIO_DATA_DIR")
+    audio_dirs = []
+    if env_dir:
+        audio_dirs.extend([env_dir, os.path.join(env_dir, "berisik"), os.path.join(env_dir, "non-berisik")])
+        
+    audio_dirs.extend([
+        os.path.join(base_dir, "data", "raw_audio"),
+        os.path.join(base_dir, "audio"),
+        os.path.join(base_dir, "samples")
+    ])
 
     tested_count = 0
     passed_count = 0
@@ -60,7 +67,11 @@ def test_feature_parity():
         if tested_count >= 5:
             break
 
-    print(f"\nPARITY TEST SUMMARY: {passed_count}/{tested_count} files passed parity check!")
+    if tested_count == 0:
+        print("\n[INFO] Berkas audio mentah data latih tidak ditemukan di direktori lokal.")
+        print("       Set environment variable AUDIO_DATA_DIR=/path/ke/folder_audio untuk menjalankan pengujian paritas.")
+    else:
+        print(f"\nPARITY TEST SUMMARY: {passed_count}/{tested_count} files passed parity check!")
 
 if __name__ == '__main__':
     test_feature_parity()

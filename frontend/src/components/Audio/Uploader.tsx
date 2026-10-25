@@ -48,7 +48,9 @@ export const Uploader: React.FC<UploaderProps> = ({ onFileSelected, isLoading })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      validateAndForward(e.target.files[0]);
+      const file = e.target.files[0];
+      e.target.value = '';
+      validateAndForward(file);
     }
   };
 

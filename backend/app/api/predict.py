@@ -260,7 +260,8 @@ async def predict_live_chunk(request: Request, response: Response, file: UploadF
     else:
         # Check active speech/sound vs silence (matching model training top_db parity)
         intervals = librosa.effects.split(y, top_db=25)
-        if len(intervals) > 0 and len(intervals) < len(y):
+        active_samples = int(np.sum([e - s for s, e in intervals])) if len(intervals) > 0 else 0
+        if len(intervals) > 0 and active_samples < len(y):
             y_active = np.concatenate([y[s:e] for s, e in intervals])
             if len(y_active) >= 11025: # at least 0.5s of sound
                 n_rep = int(np.ceil(target_samples / len(y_active)))

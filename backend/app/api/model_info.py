@@ -10,13 +10,19 @@ router = APIRouter()
 async def get_model_info(request: Request, response: Response):
     response.headers["Cache-Control"] = "no-store"
     
-    meta_path = settings.get_path(settings.MODEL_META_PATH)
-    with open(meta_path, "r", encoding="utf-8") as f:
-        meta = json.load(f)
+    meta = {}
+    if os.path.exists(meta_path):
+        with open(meta_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
         
-    class_means_path = settings.get_path(settings.CLASS_MEANS_PATH)
-    with open(class_means_path, "r", encoding="utf-8") as f:
-        class_means = json.load(f)
+    class_means = getattr(request.app.state, "class_means", None)
+    if not class_means:
+        class_means_path = settings.get_path(settings.CLASS_MEANS_PATH)
+        if os.path.exists(class_means_path):
+            with open(class_means_path, "r", encoding="utf-8") as f:
+                class_means = json.load(f)
+        else:
+            class_means = {}
         
     samples_meta_path = settings.get_path(os.path.join(settings.SAMPLES_DIR, "samples.json"))
     samples = []

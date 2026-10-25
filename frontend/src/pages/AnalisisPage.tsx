@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { RealtimeMonitor } from '../components/Audio/RealtimeMonitor';
 import { Uploader } from '../components/Audio/Uploader';
 import { SampleAudios } from '../components/Audio/SampleAudios';
@@ -25,16 +25,30 @@ export const AnalisisPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   const [audioBlobUrl, setAudioBlobUrl] = useState<string | null>(null);
+  const audioBlobUrlRef = useRef<string | null>(null);
   const [result, setResult] = useState<PredictResponse | null>(null);
   
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [seekTarget, setSeekTarget] = useState<number | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (audioBlobUrlRef.current) {
+        URL.revokeObjectURL(audioBlobUrlRef.current);
+        audioBlobUrlRef.current = null;
+      }
+    };
+  }, []);
+
   const processAudio = async (fileOrBlob: File | Blob, filename: string) => {
     setIsLoading(true);
     setErrorMsg(null);
 
+    if (audioBlobUrlRef.current) {
+      URL.revokeObjectURL(audioBlobUrlRef.current);
+    }
     const url = URL.createObjectURL(fileOrBlob);
+    audioBlobUrlRef.current = url;
     setAudioBlobUrl(url);
 
     try {
@@ -78,6 +92,10 @@ export const AnalisisPage: React.FC = () => {
   };
 
   const handleReset = () => {
+    if (audioBlobUrlRef.current) {
+      URL.revokeObjectURL(audioBlobUrlRef.current);
+      audioBlobUrlRef.current = null;
+    }
     setResult(null);
     setAudioBlobUrl(null);
     setErrorMsg(null);

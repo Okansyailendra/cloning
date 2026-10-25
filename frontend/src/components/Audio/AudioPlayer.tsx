@@ -34,8 +34,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, see
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play();
-      setIsPlaying(true);
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
     }
   };
 
