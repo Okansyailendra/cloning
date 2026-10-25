@@ -198,11 +198,7 @@
     "max_duration_s": 120,
     "min_duration_s": 0.5,
     "accepted_extensions": [
-      ".mp3",
-      ".wav",
-      ".ogg",
-      ".flac",
-      ".m4a"
+      ".mp3"
     ],
     "warn_threshold": 0.65
   },

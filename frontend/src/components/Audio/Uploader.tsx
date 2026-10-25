@@ -29,9 +29,9 @@ export const Uploader: React.FC<UploaderProps> = ({ onFileSelected, isLoading })
       return;
     }
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
-    const allowed = ['.mp3', '.wav', '.ogg', '.flac', '.m4a'];
+    const allowed = ['.mp3'];
     if (!allowed.includes(ext)) {
-      setErrorMsg(`Format berkas "${ext}" tidak didukung. Gunakan MP3, WAV, OGG, FLAC, atau M4A.`);
+      setErrorMsg(`Format berkas "${ext}" tidak didukung. Harap gunakan berkas audio berformat MP3 (.mp3).`);
       return;
     }
     onFileSelected(file);
@@ -76,7 +76,7 @@ export const Uploader: React.FC<UploaderProps> = ({ onFileSelected, isLoading })
         <input
           ref={inputRef}
           type="file"
-          accept=".mp3,.wav,.ogg,.flac,.m4a"
+          accept=".mp3"
           style={{ display: 'none' }}
           onChange={handleChange}
           disabled={isLoading}
@@ -98,7 +98,7 @@ export const Uploader: React.FC<UploaderProps> = ({ onFileSelected, isLoading })
           Tarik & lepas file audio ke sini, atau klik untuk memilih
         </p>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-          Mendukung format MP3, WAV, OGG, FLAC, M4A (Maksimal 15 MB, durasi 0,5 - 120 detik)
+          Khusus format MP3 (Maksimal 15 MB, durasi 0,5 - 120 detik)
         </p>
       </div>
 

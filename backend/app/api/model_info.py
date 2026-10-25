@@ -10,6 +10,7 @@ router = APIRouter()
 async def get_model_info(request: Request, response: Response):
     response.headers["Cache-Control"] = "no-store"
     
+    meta_path = settings.get_path(settings.MODEL_META_PATH)
     meta = {}
     if os.path.exists(meta_path):
         with open(meta_path, "r", encoding="utf-8") as f:
@@ -42,7 +43,7 @@ async def get_model_info(request: Request, response: Response):
             "max_file_mb": settings.MAX_FILE_MB,
             "max_duration_s": settings.MAX_DURATION_S,
             "min_duration_s": settings.MIN_DURATION_S,
-            "accepted_extensions": [".mp3", ".wav", ".ogg", ".flac", ".m4a"],
+            "accepted_extensions": [".mp3"],
             "warn_threshold": settings.CONFIDENCE_WARN_THRESHOLD
         }),
         samples=samples

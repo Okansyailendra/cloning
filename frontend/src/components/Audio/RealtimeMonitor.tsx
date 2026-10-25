@@ -19,6 +19,10 @@ import { saveHistoryItem, createLiveSessionHistoryItem } from '../../services/hi
 import type { LivePredictResponse, LiveHistoryPoint } from '../../types/api';
 import { encodeWAV } from '../../utils/wavEncoder';
 
+// 3-second circular audio buffer (at 22050 Hz = 66150 samples)
+const TARGET_SR = 22050;
+const BUFFER_LEN = TARGET_SR * 3;
+
 interface RealtimeMonitorProps {
   viewMode: 'realtime' | 'file';
   onSwitchMode: (mode: 'realtime' | 'file') => void;
@@ -60,6 +64,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   const audioCtxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const scriptNodeRef = useRef<ScriptProcessorNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const rollingTimerRef = useRef<number | null>(null);
   const stopwatchTimerRef = useRef<number | null>(null);
@@ -74,6 +79,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   const latestNoisePercentRef = useRef<number>(0);
   const isActiveRef = useRef<boolean>(false);
   const audioAlertRef = useRef<boolean>(true);
+  const playAlarmAudioRef = useRef<(type: 'medium' | 'high') => void>(() => {});
 
   // Sync refs for auto-saving on stop
   const elapsedSecRef = useRef<number>(0);
@@ -93,9 +99,6 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   useEffect(() => { historyRef.current = history; }, [history]);
   useEffect(() => { liveDataRef.current = liveData; }, [liveData]);
 
-  // 3-second circular audio buffer (at 22050 Hz = 66150 samples)
-  const TARGET_SR = 22050;
-  const BUFFER_LEN = TARGET_SR * 3;
   const audioBufferRef = useRef<Float32Array>(new Float32Array(BUFFER_LEN));
   const bufferWriteIdx = useRef<number>(0);
   const isPredictingRef = useRef<boolean>(false);
@@ -124,9 +127,9 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       if (isActiveRef.current && audioAlertRef.current) {
         const currentPct = latestNoisePercentRef.current;
         if (currentPct >= 90) {
-          playAlarmAudio('high');
+          playAlarmAudioRef.current('high');
         } else if (currentPct >= 70) {
-          playAlarmAudio('medium');
+          playAlarmAudioRef.current('medium');
         }
       }
     };
@@ -139,6 +142,10 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       onAudioFinished();
     });
   }, [alarmVolume]);
+
+  useEffect(() => {
+    playAlarmAudioRef.current = playAlarmAudio;
+  }, [playAlarmAudio]);
 
   // Dynamically update active alarm volume if playing
   useEffect(() => {
@@ -171,6 +178,12 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
+      }
+      if (scriptNodeRef.current) {
+        try {
+          scriptNodeRef.current.disconnect();
+        } catch {}
+        scriptNodeRef.current = null;
       }
       if (audioCtxRef.current) {
         audioCtxRef.current.close().catch(() => {});
@@ -588,6 +601,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
 
       // Script processor to fill 3-second buffer
       const scriptNode = ctx.createScriptProcessor(4096, 1, 1);
+      scriptNodeRef.current = scriptNode;
       const inputSR = ctx.sampleRate;
 
       scriptNode.onaudioprocess = (e) => {
@@ -637,6 +651,12 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
+    }
+    if (scriptNodeRef.current) {
+      try {
+        scriptNodeRef.current.disconnect();
+      } catch {}
+      scriptNodeRef.current = null;
     }
     if (audioCtxRef.current) {
       audioCtxRef.current.close().catch(() => {});

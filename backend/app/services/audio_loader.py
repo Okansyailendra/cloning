@@ -29,19 +29,28 @@ def validate_audio_file(file_bytes: bytes, filename: str, max_mb: int = 15):
         raise AppError(400, "FILE_KOSONG", "File kosong (0 byte). Pilih file audio yang berisi rekaman.")
         
     ext = os.path.splitext(filename)[1].lower()
-    allowed_exts = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.webm']
+    allowed_exts = ['.mp3', '.wav']
     if ext not in allowed_exts:
         raise AppError(
             415, "FORMAT_TIDAK_DIDUKUNG",
-            "Format file tidak didukung. Gunakan MP3, WAV, OGG, FLAC, M4A, atau WEBM.",
+            "Format file tidak didukung. Harap gunakan file audio berformat MP3 (.mp3).",
             {"extension": ext, "allowed": allowed_exts}
         )
 
 def load_and_preprocess_audio(audio_path: str, target_sr: int = 22050, top_db: int = 25):
     try:
         y_raw, sr = librosa.load(audio_path, sr=target_sr, mono=True)
-    except Exception as e:
-        raise AppError(422, "AUDIO_RUSAK", f"File audio tidak dapat dibaca atau rusak. Coba file lain. Detail: {str(e)}")
+    except Exception as err_librosa:
+        # Fallback to ffmpeg for formats like M4A / AAC / WEBM that soundfile cannot decode natively
+        try:
+            import subprocess
+            cmd = ['ffmpeg', '-v', 'quiet', '-i', audio_path, '-f', 'wav', '-ar', str(target_sr), '-ac', '1', 'pipe:1']
+            proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15)
+            if proc.returncode != 0 or len(proc.stdout) == 0:
+                raise err_librosa
+            y_raw, sr = sf.read(io.BytesIO(proc.stdout), dtype='float32')
+        except Exception as e:
+            raise AppError(422, "AUDIO_RUSAK", f"File audio tidak dapat dibaca atau rusak. Coba file lain. Detail: {str(e)}")
 
     duration_s = float(len(y_raw) / sr)
     if duration_s < 0.5:

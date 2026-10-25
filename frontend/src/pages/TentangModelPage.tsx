@@ -1,23 +1,75 @@
 import React, { useEffect, useState } from 'react';
 import { fetchModelInfo } from '../services/api';
 import type { ModelInfoResponse } from '../types/api';
-import { BookOpen, BarChart3, Layers } from 'lucide-react';
+import { BookOpen, BarChart3, Layers, AlertCircle, RefreshCw } from 'lucide-react';
 
 export const TentangModelPage: React.FC = () => {
   const [info, setInfo] = useState<ModelInfoResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadModelData = () => {
+    setIsLoading(true);
+    setErrorMsg(null);
     fetchModelInfo()
       .then(data => setInfo(data))
-      .catch(err => console.error(err))
+      .catch(err => {
+        console.error(err);
+        setErrorMsg('Gagal memuat spesifikasi model dari backend. Pastikan server backend berjalan.');
+      })
       .finally(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    loadModelData();
   }, []);
 
-  if (isLoading || !info) {
+  if (isLoading) {
     return (
       <div className="glass-card" style={{ padding: '60px', color: 'var(--text-secondary)', textAlign: 'center' }}>
         Memuat spesifikasi teknis dan metrik evaluasi model...
+      </div>
+    );
+  }
+
+  if (errorMsg || !info) {
+    return (
+      <div className="glass-card" style={{
+        padding: '48px 24px',
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '14px',
+        maxWidth: '560px',
+        margin: '40px auto'
+      }}>
+        <AlertCircle size={36} color="var(--accent-warning)" />
+        <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+          Gagal Memuat Informasi Model
+        </h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          {errorMsg || 'Terjadi kesalahan saat menghubungi server backend FastAPI.'}
+        </p>
+        <button
+          onClick={loadModelData}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            borderRadius: 'var(--radius-pill)',
+            backgroundColor: 'var(--accent-quiet)',
+            color: '#0B0F14',
+            fontWeight: 600,
+            fontSize: '13px',
+            cursor: 'pointer',
+            marginTop: '8px'
+          }}
+        >
+          <RefreshCw size={15} />
+          <span>Coba Lagi</span>
+        </button>
       </div>
     );
   }

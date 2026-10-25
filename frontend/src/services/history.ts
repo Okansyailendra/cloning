@@ -22,8 +22,41 @@ export function saveHistoryItem(item: HistoryItem): void {
   try {
     const current = getHistory();
     const filtered = current.filter(h => h.id !== item.id);
-    const updated = [item, ...filtered].slice(0, MAX_HISTORY);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    let updated = [item, ...filtered].slice(0, MAX_HISTORY);
+
+    let saved = false;
+    while (!saved && updated.length > 0) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        saved = true;
+      } catch {
+        // If storage quota exceeded, progressively drop oldest 25% items to free space
+        if (updated.length > 5) {
+          updated = updated.slice(0, Math.max(5, Math.floor(updated.length * 0.75)));
+        } else {
+          // If still failing with <= 5 items, strip heavy spectrogram matrices from older entries
+          updated = updated.map((it, idx) => {
+            if (idx === 0) return it;
+            if (it.full_response?.visual?.spectrogram?.data) {
+              return {
+                ...it,
+                full_response: {
+                  ...it.full_response,
+                  visual: {
+                    ...it.full_response.visual,
+                    spectrogram: { ...it.full_response.visual.spectrogram, data: [] }
+                  }
+                }
+              };
+            }
+            return it;
+          });
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          saved = true;
+        }
+      }
+    }
+
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('soundlab_history_updated', { detail: updated }));
     }
