@@ -214,6 +214,8 @@ export interface LivePredictResponse {
   mfcc1?: number;
   mfcc3?: number;
   rms_std?: number;
+  baseline_rms?: number;
+  is_ambient?: boolean;
 }
 
 export interface LiveHistoryPoint {

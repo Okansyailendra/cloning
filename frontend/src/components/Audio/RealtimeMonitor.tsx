@@ -45,6 +45,32 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
 
   const [savedNotification, setSavedNotification] = useState<string | null>(null);
 
+  // Interval delay state for prediction (in seconds: 1, 3, or 5)
+  const [intervalSec, setIntervalSec] = useState<number>(1);
+
+  // Ambient noise calibration states: 'default' (system baseline) or 'custom' (measured 3s via mic)
+  const [calibrationMode, setCalibrationMode] = useState<'default' | 'custom'>(() => {
+    const savedMode = localStorage.getItem('soundlab_calibration_mode');
+    if (savedMode === 'default' || savedMode === 'custom') return savedMode;
+    const saved = localStorage.getItem('soundlab_ambient_baseline');
+    return saved && parseFloat(saved) > 0 ? 'custom' : 'default';
+  });
+
+  const [ambientBaselineRms, setAmbientBaselineRms] = useState<number>(() => {
+    const savedMode = localStorage.getItem('soundlab_calibration_mode');
+    if (savedMode === 'default') return 0;
+    const saved = localStorage.getItem('soundlab_ambient_baseline');
+    return saved ? parseFloat(saved) : 0;
+  });
+  const [isCalibrating, setIsCalibrating] = useState<boolean>(false);
+  const [calibrationCount, setCalibrationCount] = useState<number>(3);
+  const [calibrationNotice, setCalibrationNotice] = useState<string | null>(null);
+
+  const ambientBaselineRmsRef = useRef<number>(ambientBaselineRms);
+  useEffect(() => {
+    ambientBaselineRmsRef.current = ambientBaselineRms;
+  }, [ambientBaselineRms]);
+
   // Cumulative statistics
   const [totalChecks, setTotalChecks] = useState<number>(0);
   const [noisyChecks, setNoisyChecks] = useState<number>(0);
@@ -513,7 +539,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       ordered.set(audioBufferRef.current.subarray(0, writeIdx), BUFFER_LEN - writeIdx);
 
       const wavBlob = encodeWAV(ordered, TARGET_SR);
-      const res = await predictLiveAudio(wavBlob);
+      const res = await predictLiveAudio(wavBlob, ambientBaselineRmsRef.current);
       setErrorMsg(null);
       setLiveData(res);
 
@@ -557,6 +583,142 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       isPredictingRef.current = false;
     }
   }, [playAlarmAudio]);
+
+  // Dynamically manage prediction interval timer when isActive or intervalSec changes
+  useEffect(() => {
+    if (isActive) {
+      if (rollingTimerRef.current) {
+        clearInterval(rollingTimerRef.current);
+      }
+      rollingTimerRef.current = window.setInterval(() => {
+        sendLivePrediction();
+      }, intervalSec * 1000);
+    }
+    return () => {
+      if (rollingTimerRef.current) {
+        clearInterval(rollingTimerRef.current);
+        rollingTimerRef.current = null;
+      }
+    };
+  }, [isActive, intervalSec, sendLivePrediction]);
+
+  // Room Ambient Noise Calibration (3-second baseline measurement)
+  const runCalibration = async () => {
+    if (isCalibrating) return;
+    setIsCalibrating(true);
+    setCalibrationCount(3);
+    setCalibrationNotice('Mengukur kebisingan dasar ruangan... Harap kondisi tetap tenang.');
+
+    let localStream: MediaStream | null = null;
+    let localAudioCtx: AudioContext | null = null;
+    let localAnalyser: AnalyserNode | null = null;
+
+    try {
+      let activeAnalyser = analyserRef.current;
+      if (!activeAnalyser || !isActiveRef.current) {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            channelCount: 1
+          }
+        });
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        localAudioCtx = new AudioCtx();
+        const source = localAudioCtx.createMediaStreamSource(localStream);
+        localAnalyser = localAudioCtx.createAnalyser();
+        localAnalyser.fftSize = 2048;
+        source.connect(localAnalyser);
+        activeAnalyser = localAnalyser;
+      }
+
+      const samples: number[] = [];
+      const startTime = Date.now();
+      const durationMs = 3000;
+
+      await new Promise<void>((resolve) => {
+        const sampleInterval = window.setInterval(() => {
+          if (activeAnalyser) {
+            const timeData = new Float32Array(activeAnalyser.fftSize);
+            activeAnalyser.getFloatTimeDomainData(timeData);
+            let sumSq = 0;
+            for (let i = 0; i < timeData.length; i++) {
+              sumSq += timeData[i] * timeData[i];
+            }
+            const rms = Math.sqrt(sumSq / timeData.length);
+            if (rms > 0.0001) {
+              samples.push(rms);
+            }
+          }
+
+          const elapsed = Date.now() - startTime;
+          const remainingSec = Math.max(1, Math.ceil((durationMs - elapsed) / 1000));
+          setCalibrationCount(remainingSec);
+
+          if (elapsed >= durationMs) {
+            clearInterval(sampleInterval);
+            resolve();
+          }
+        }, 100);
+      });
+
+      const avgRms = samples.length > 0
+        ? samples.reduce((a, b) => a + b, 0) / samples.length
+        : 0.004;
+
+      const finalBaseline = Math.round(avgRms * 10000) / 10000;
+      setAmbientBaselineRms(finalBaseline);
+      localStorage.setItem('soundlab_ambient_baseline', finalBaseline.toString());
+      localStorage.setItem('soundlab_calibration_mode', 'custom');
+      setCalibrationMode('custom');
+      setCalibrationNotice(`Kalibrasi selesai! Baseline mic disetel pada ${finalBaseline.toFixed(4)} RMS.`);
+      setTimeout(() => setCalibrationNotice(null), 5000);
+    } catch (err: any) {
+      console.warn('Calibration error:', err);
+      setCalibrationNotice(`Gagal melakukan kalibrasi: ${err.message || 'Izin mikrofon diperlukan'}`);
+      setTimeout(() => setCalibrationNotice(null), 5000);
+    } finally {
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+      }
+      if (localAudioCtx) {
+        localAudioCtx.close().catch(() => {});
+      }
+      setIsCalibrating(false);
+      setCalibrationCount(3);
+    }
+  };
+
+  const selectCalibrationMode = (mode: 'default' | 'custom') => {
+    setCalibrationMode(mode);
+    localStorage.setItem('soundlab_calibration_mode', mode);
+    if (mode === 'default') {
+      setAmbientBaselineRms(0);
+      setCalibrationNotice('Menggunakan baseline acuan Default Sistem (0.0030 RMS).');
+      setTimeout(() => setCalibrationNotice(null), 4000);
+    } else {
+      const saved = localStorage.getItem('soundlab_ambient_baseline');
+      const val = saved ? parseFloat(saved) : 0;
+      if (val > 0) {
+        setAmbientBaselineRms(val);
+        setCalibrationNotice(`Menggunakan hasil ukur mikrofon: ${val.toFixed(4)} RMS.`);
+      } else {
+        setAmbientBaselineRms(0);
+        setCalibrationNotice('Belum ada data ukur mikrofon. Tekan "Mulai Ukur Mic (3s)" di bawah.');
+      }
+      setTimeout(() => setCalibrationNotice(null), 5000);
+    }
+  };
+
+  const resetCustomCalibration = () => {
+    setAmbientBaselineRms(0);
+    localStorage.removeItem('soundlab_ambient_baseline');
+    setCalibrationMode('default');
+    localStorage.setItem('soundlab_calibration_mode', 'default');
+    setCalibrationNotice('Data ukur mikrofon direset. Menggunakan acuan Default Sistem.');
+    setTimeout(() => setCalibrationNotice(null), 4000);
+  };
 
   // Start Real-Time Monitoring
   const startMonitoring = async () => {
@@ -625,11 +787,6 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       muteNode.connect(ctx.destination);
 
       setIsActive(true);
-
-      // Rolling prediction every 1 second
-      rollingTimerRef.current = window.setInterval(() => {
-        sendLivePrediction();
-      }, 1000);
 
       // Stopwatch
       stopwatchTimerRef.current = window.setInterval(() => {
@@ -1016,6 +1173,24 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                   </span>
                 </div>
 
+                {/* Row 2: Interval Analisis */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Interval Pembaruan</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                    {intervalSec} Detik
+                  </span>
+                </div>
+
+                {/* Row 3: Baseline Ambien */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Baseline Ambien</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: (calibrationMode === 'custom' && ambientBaselineRms > 0) ? '#10B981' : 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                    {calibrationMode === 'custom' && ambientBaselineRms > 0
+                      ? `${ambientBaselineRms.toFixed(4)} RMS (Ukur Mic)`
+                      : '0.0030 RMS (Default Sistem)'}
+                  </span>
+                </div>
+
                 {/* Row 2: Status Klasifikasi */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Hasil Klasifikasi</span>
@@ -1100,6 +1275,199 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 <div>• Akurasi Pengujian: 92.5% (F1-Score: 92.5%)</div>
               </div>
             )}
+
+            {/* Interval Delay Control Strip (Clean Preset: 1 Detik, 3 Detik, 5 Detik) */}
+            <div style={{
+              padding: '12px 20px',
+              backgroundColor: '#FAFCF9',
+              borderTop: '1px solid rgba(0, 0, 0, 0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Interval Analisis
+                </span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                  {intervalSec} Detik
+                </span>
+              </div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '6px',
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                padding: '3px',
+                borderRadius: '8px'
+              }}>
+                {[1, 3, 5].map((sec) => {
+                  const isSelected = intervalSec === sec;
+                  return (
+                    <button
+                      key={sec}
+                      type="button"
+                      onClick={() => setIntervalSec(sec)}
+                      style={{
+                        padding: '6px 0',
+                        fontSize: '12px',
+                        fontWeight: isSelected ? 700 : 500,
+                        color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
+                        borderRadius: '6px',
+                        boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {sec} Detik
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Room Ambient Noise Calibration Strip */}
+            <div style={{
+              padding: '12px 20px',
+              backgroundColor: '#FAFCF9',
+              borderTop: '1px solid rgba(0, 0, 0, 0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  Kalibrasi Ruangan
+                </span>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: (calibrationMode === 'custom' && ambientBaselineRms > 0) ? '#10B981' : 'var(--text-secondary)',
+                  fontFamily: 'var(--font-mono)'
+                }}>
+                  {calibrationMode === 'custom' && ambientBaselineRms > 0
+                    ? `${ambientBaselineRms.toFixed(4)} RMS (Kustom Mic)`
+                    : '0.0030 RMS (Default Sistem)'}
+                </span>
+              </div>
+
+              {/* Segmented Mode Selector: Default vs Ukur Mic 3 Detik */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '6px',
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                padding: '3px',
+                borderRadius: '8px'
+              }}>
+                <button
+                  type="button"
+                  disabled={isCalibrating}
+                  onClick={() => selectCalibrationMode('default')}
+                  style={{
+                    padding: '6px 0',
+                    fontSize: '12px',
+                    fontWeight: calibrationMode === 'default' ? 700 : 500,
+                    color: calibrationMode === 'default' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    backgroundColor: calibrationMode === 'default' ? '#FFFFFF' : 'transparent',
+                    borderRadius: '6px',
+                    boxShadow: calibrationMode === 'default' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    border: 'none',
+                    cursor: isCalibrating ? 'not-allowed' : 'pointer',
+                    textAlign: 'center',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Default Sistem
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isCalibrating}
+                  onClick={() => selectCalibrationMode('custom')}
+                  style={{
+                    padding: '6px 0',
+                    fontSize: '12px',
+                    fontWeight: calibrationMode === 'custom' ? 700 : 500,
+                    color: calibrationMode === 'custom' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    backgroundColor: calibrationMode === 'custom' ? '#FFFFFF' : 'transparent',
+                    borderRadius: '6px',
+                    boxShadow: calibrationMode === 'custom' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    border: 'none',
+                    cursor: isCalibrating ? 'not-allowed' : 'pointer',
+                    textAlign: 'center',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Ukur Mic (3s)
+                </button>
+              </div>
+
+              {/* Action buttons when in Custom (Ukur Mic 3s) Mode */}
+              {calibrationMode === 'custom' && (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    disabled={isCalibrating}
+                    onClick={runCalibration}
+                    style={{
+                      flex: 1,
+                      padding: '7px 12px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: isCalibrating ? 'var(--text-secondary)' : '#181F26',
+                      backgroundColor: isCalibrating ? 'rgba(0, 0, 0, 0.05)' : '#FFFFFF',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      cursor: isCalibrating ? 'not-allowed' : 'pointer',
+                      textAlign: 'center',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {isCalibrating
+                      ? `Mengukur Suara Ruangan (${calibrationCount}s)...`
+                      : (ambientBaselineRms > 0 ? 'Kalibrasi Ulang (3s)' : 'Mulai Ukur Mic (3s)')}
+                  </button>
+
+                  {ambientBaselineRms > 0 && !isCalibrating && (
+                    <button
+                      type="button"
+                      onClick={resetCustomCalibration}
+                      title="Hapus rekaman kalibrasi mic dan kembali ke default"
+                      style={{
+                        padding: '7px 12px',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        color: '#64748B',
+                        backgroundColor: 'transparent',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(0, 0, 0, 0.08)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {calibrationNotice && (
+                <div style={{
+                  fontSize: '11px',
+                  color: isCalibrating ? '#3B82F6' : (calibrationMode === 'custom' && ambientBaselineRms > 0 ? '#10B981' : 'var(--text-secondary)'),
+                  lineHeight: 1.4,
+                  backgroundColor: isCalibrating ? 'rgba(59, 130, 246, 0.08)' : 'rgba(0, 0, 0, 0.03)',
+                  padding: '5px 8px',
+                  borderRadius: '6px'
+                }}>
+                  {calibrationNotice}
+                </div>
+              )}
+            </div>
 
             {/* Bottom Strip: Control Buttons (Start/Stop + Alarm Toggle) */}
             <div style={{

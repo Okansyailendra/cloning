@@ -8,7 +8,7 @@ import io
 import soundfile as sf
 import librosa
 import numpy as np
-from fastapi import APIRouter, UploadFile, File, Request, Response
+from fastapi import APIRouter, UploadFile, File, Form, Request, Response
 from app.schemas import PredictResponse
 from app.errors import AppError
 from app.config import settings
@@ -190,7 +190,12 @@ async def predict_audio(request: Request, response: Response, file: UploadFile =
 
 
 @router.post("/predict-live", response_model=dict)
-async def predict_live_chunk(request: Request, response: Response, file: UploadFile = File(None)):
+async def predict_live_chunk(
+    request: Request,
+    response: Response,
+    file: UploadFile = File(None),
+    baseline_rms: float = Form(0.0)
+):
     response.headers["Cache-Control"] = "no-store"
     
     if file is None:
@@ -243,8 +248,13 @@ async def predict_live_chunk(request: Request, response: Response, file: UploadF
     rms_raw_mean = float(np.mean(rms_raw_arr)) if len(rms_raw_arr) > 0 else 0.0
     peak_rms = float(np.max(rms_raw_arr)) if len(rms_raw_arr) > 0 else 0.0
 
-    # True silence check
-    if max_amp < 1e-4 or rms_raw_mean < 0.003:
+    # Effective silence / ambient threshold:
+    # Default without calibration: 0.003
+    # With calibration: baseline_rms * 1.25 (with minimum 0.003, max capped at 0.04 to avoid masking loud sound)
+    effective_silence_rms = max(0.003, min(0.04, baseline_rms * 1.25))
+
+    # True silence check or calibrated ambient room sound
+    if max_amp < 1e-4 or rms_raw_mean <= effective_silence_rms:
         pred_label = 'non-berisik'
         confidence = 0.99
         prob_dict = {'berisik': 0.01, 'non-berisik': 0.99}
@@ -256,7 +266,10 @@ async def predict_live_chunk(request: Request, response: Response, file: UploadF
             'mfcc3_mean': 0.0,
             'rms_std': 0.0001
         }
-        status_text = "Kondisi Ruangan: SANGAT TENANG (Nyaris tanpa kebisingan)"
+        if baseline_rms > 0 and rms_raw_mean > 0.003:
+            status_text = "Kondisi Ruangan: AMBIEN DASAR (Sesuai kalibrasi kebisingan ruangan)"
+        else:
+            status_text = "Kondisi Ruangan: SANGAT TENANG (Nyaris tanpa kebisingan)"
     else:
         # Check active speech/sound vs silence (matching model training top_db parity)
         intervals = librosa.effects.split(y, top_db=25)
@@ -334,5 +347,7 @@ async def predict_live_chunk(request: Request, response: Response, file: UploadF
         "status_text": status_text,
         "mfcc1": float(round(feat_dict['mfcc1_mean'], 2)),
         "mfcc3": float(round(feat_dict['mfcc3_mean'], 2)),
-        "rms_std": float(round(feat_dict['rms_std'], 4))
+        "rms_std": float(round(feat_dict['rms_std'], 4)),
+        "baseline_rms": baseline_rms,
+        "is_ambient": bool(rms_raw_mean <= effective_silence_rms and baseline_rms > 0)
     }

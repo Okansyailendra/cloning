@@ -82,9 +82,12 @@ export async function predictAudioFile(
 }
 
 
-export async function predictLiveAudio(blob: Blob): Promise<LivePredictResponse> {
+export async function predictLiveAudio(blob: Blob, baselineRms: number = 0): Promise<LivePredictResponse> {
   const formData = new FormData();
   formData.append('file', blob, 'live.wav');
+  if (baselineRms > 0) {
+    formData.append('baseline_rms', baselineRms.toString());
+  }
 
   const res = await fetch(`${API_BASE}/predict-live`, {
     method: 'POST',
