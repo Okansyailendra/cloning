@@ -12,7 +12,9 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  RotateCcw
+  RotateCcw,
+  Clock,
+  Check
 } from 'lucide-react';
 import { predictLiveAudio } from '../../services/api';
 import { saveHistoryItem, createLiveSessionHistoryItem } from '../../services/history';
@@ -22,6 +24,34 @@ import { encodeWAV } from '../../utils/wavEncoder';
 // 3-second circular audio buffer (at 22050 Hz = 66150 samples)
 const TARGET_SR = 22050;
 const BUFFER_LEN = TARGET_SR * 3;
+
+interface PersistenceOption {
+  val: number;
+  label: string;
+  badge: string;
+  desc: string;
+}
+
+const PERSISTENCE_OPTIONS: PersistenceOption[] = [
+  {
+    val: 0,
+    label: 'Langsung',
+    badge: 'Demo / Uji Coba',
+    desc: 'Alarm berbunyi seketika saat bising terdeteksi'
+  },
+  {
+    val: 5,
+    label: 'Tahan 5 Detik',
+    badge: 'Rekomendasi',
+    desc: 'Menyaring batuk, barang jatuh, dan kegaduhan sesaat'
+  },
+  {
+    val: 10,
+    label: 'Tahan 10 Detik',
+    badge: 'Toleransi Tinggi',
+    desc: 'Hanya berbunyi jika kebisingan berkepanjangan'
+  }
+];
 
 interface RealtimeMonitorProps {
   viewMode: 'realtime' | 'file';
@@ -43,10 +73,40 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   const [activeAlarmLevel, setActiveAlarmLevel] = useState<'none' | 'medium' | 'high'>('none');
   const [testingAlarm, setTestingAlarm] = useState<string | null>(null);
 
+  // Persistence delay: how long noise must persist (in seconds: 0 for immediate, 3, 5, or 10) before sounding alarm
+  const [alarmPersistenceSec, setAlarmPersistenceSec] = useState<number>(() => {
+    const saved = localStorage.getItem('soundlab_alarm_persistence');
+    return saved !== null ? parseInt(saved, 10) : 5; // Default 5 detik
+  });
+  const [currentNoisyElapsedSec, setCurrentNoisyElapsedSec] = useState<number>(0);
+
+  const alarmPersistenceSecRef = useRef<number>(alarmPersistenceSec);
+  useEffect(() => {
+    alarmPersistenceSecRef.current = alarmPersistenceSec;
+    localStorage.setItem('soundlab_alarm_persistence', alarmPersistenceSec.toString());
+  }, [alarmPersistenceSec]);
+
+  const noisyStartTimeRef = useRef<number | null>(null);
+  const noisyPercentSamplesRef = useRef<number[]>([]);
+  const [currentAvgNoisePercent, setCurrentAvgNoisePercent] = useState<number>(0);
+  const alarmTriggeredForSessionRef = useRef<boolean>(false);
+
   const [savedNotification, setSavedNotification] = useState<string | null>(null);
 
-  // Interval delay state for prediction (in seconds: 1, 3, or 5)
-  const [intervalSec, setIntervalSec] = useState<number>(1);
+  // Custom interactive dropdown state for persistence selection
+  const [persistenceMenuOpen, setPersistenceMenuOpen] = useState<boolean>(false);
+  const persistenceDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!persistenceMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (persistenceDropdownRef.current && !persistenceDropdownRef.current.contains(e.target as Node)) {
+        setPersistenceMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [persistenceMenuOpen]);
 
   // Ambient noise calibration states: 'default' (system baseline) or 'custom' (measured 3s via mic)
   const [calibrationMode, setCalibrationMode] = useState<'default' | 'custom'>(() => {
@@ -149,13 +209,26 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       setActiveAlarmLevel('none');
       setTestingAlarm(null);
 
-      // Check if subsequent alarm needed
+      // Check if subsequent alarm needed if noise is still actively persisting
       if (isActiveRef.current && audioAlertRef.current) {
         const currentPct = latestNoisePercentRef.current;
-        if (currentPct >= 90) {
-          playAlarmAudioRef.current('high');
-        } else if (currentPct >= 70) {
-          playAlarmAudioRef.current('medium');
+        if (currentPct >= 70 || liveDataRef.current?.label === 'berisik') {
+          const elapsed = noisyStartTimeRef.current ? (Date.now() - noisyStartTimeRef.current) / 1000 : 0;
+          const threshold = alarmPersistenceSecRef.current;
+          if (threshold === 0 || elapsed >= threshold) {
+            const samples = noisyPercentSamplesRef.current;
+            const avgPct = samples.length > 0 ? Math.round(samples.reduce((a, b) => a + b, 0) / samples.length) : currentPct;
+            const evaluatedPct = threshold === 0 ? currentPct : avgPct;
+            if (evaluatedPct >= 90) {
+              playAlarmAudioRef.current('high');
+            } else {
+              playAlarmAudioRef.current('medium');
+            }
+          }
+        } else {
+          noisyStartTimeRef.current = null;
+          noisyPercentSamplesRef.current = [];
+          setCurrentAvgNoisePercent(0);
         }
       }
     };
@@ -192,9 +265,37 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     }
     isAlarmPlayingRef.current = false;
     currentAlarmTypeRef.current = null;
+    noisyStartTimeRef.current = null;
+    noisyPercentSamplesRef.current = [];
+    alarmTriggeredForSessionRef.current = false;
+    setCurrentNoisyElapsedSec(0);
+    setCurrentAvgNoisePercent(0);
     setActiveAlarmLevel('none');
     setTestingAlarm(null);
   }, []);
+
+  // Live ticker for smooth UI timer when noise is currently persisting
+  useEffect(() => {
+    if (!isActive) return;
+
+    const ticker = window.setInterval(() => {
+      if (noisyStartTimeRef.current !== null) {
+        const elapsed = (Date.now() - noisyStartTimeRef.current) / 1000;
+        setCurrentNoisyElapsedSec(elapsed);
+      } else {
+        setCurrentNoisyElapsedSec(prev => (prev !== 0 ? 0 : prev));
+      }
+    }, 100);
+
+    return () => {
+      window.clearInterval(ticker);
+      noisyStartTimeRef.current = null;
+      noisyPercentSamplesRef.current = [];
+      alarmTriggeredForSessionRef.current = false;
+      setCurrentNoisyElapsedSec(0);
+      setCurrentAvgNoisePercent(0);
+    };
+  }, [isActive]);
 
   // Cleanup all audio resources on unmount
   useEffect(() => {
@@ -549,13 +650,40 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       const noisePercent = Math.round(noiseProb * 100);
       latestNoisePercentRef.current = noisePercent;
 
-      // Trigger atomic alarm
-      if (audioAlertRef.current && !isAlarmPlayingRef.current) {
-        if (noisePercent >= 90) {
-          playAlarmAudio('high');
-        } else if (noisePercent >= 70) {
-          playAlarmAudio('medium');
+      // Persistence check for noise alarm (triggered only when noise persists >= threshold)
+      const isCurrentlyNoisy = noisePercent >= 70 || res.label === 'berisik';
+      if (isCurrentlyNoisy) {
+        if (noisyStartTimeRef.current === null) {
+          noisyStartTimeRef.current = Date.now();
+          noisyPercentSamplesRef.current = [noisePercent];
+        } else {
+          noisyPercentSamplesRef.current.push(noisePercent);
         }
+
+        const samples = noisyPercentSamplesRef.current;
+        const avgPct = Math.round(samples.reduce((a, b) => a + b, 0) / samples.length);
+        setCurrentAvgNoisePercent(avgPct);
+
+        const elapsed = (Date.now() - noisyStartTimeRef.current) / 1000;
+        const threshold = alarmPersistenceSecRef.current;
+
+        // Alarm fires only when noise has continuously persisted for at least `threshold` seconds
+        if (threshold === 0 || elapsed >= threshold) {
+          if (audioAlertRef.current && !isAlarmPlayingRef.current) {
+            // Evaluated percentage: accumulated average during persistence duration (or instant if threshold is 0)
+            const evaluatedPct = threshold === 0 ? noisePercent : avgPct;
+            if (evaluatedPct >= 90) {
+              playAlarmAudio('high');
+            } else {
+              playAlarmAudio('medium');
+            }
+          }
+        }
+      } else {
+        // Reset persistence timer and sample accumulator immediately when noise subsides
+        noisyStartTimeRef.current = null;
+        noisyPercentSamplesRef.current = [];
+        setCurrentAvgNoisePercent(0);
       }
 
       setTotalChecks(prev => prev + 1);
@@ -584,7 +712,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     }
   }, [playAlarmAudio]);
 
-  // Dynamically manage prediction interval timer when isActive or intervalSec changes
+  // Dynamically manage prediction interval timer (fixed 1-second cadence for real-time accuracy)
   useEffect(() => {
     if (isActive) {
       if (rollingTimerRef.current) {
@@ -592,7 +720,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       }
       rollingTimerRef.current = window.setInterval(() => {
         sendLivePrediction();
-      }, intervalSec * 1000);
+      }, 1000);
     }
     return () => {
       if (rollingTimerRef.current) {
@@ -600,7 +728,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
         rollingTimerRef.current = null;
       }
     };
-  }, [isActive, intervalSec, sendLivePrediction]);
+  }, [isActive, sendLivePrediction]);
 
   // Room Ambient Noise Calibration (3-second baseline measurement)
   const runCalibration = async () => {
@@ -1049,6 +1177,53 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
             </div>
           </div>
 
+          {/* Real-time Noise Persistence Live Counter & Progress Banner */}
+          {alarmPersistenceSec > 0 && (
+            <div className={`rt-persistence-hero-banner ${isActive && currentNoisyElapsedSec > 0 ? 'active' : 'idle'}`}>
+              <div className="rt-hero-banner-top">
+                <div className="rt-hero-banner-title-group">
+                  <div className={`rt-hero-banner-pulse ${isActive && currentNoisyElapsedSec > 0 ? 'pulsing' : 'inactive'}`} />
+                  <span className="rt-hero-banner-title">
+                    {!isActive ? (
+                      `Filter Alarm: Tahan Berisik ${alarmPersistenceSec} Detik`
+                    ) : currentNoisyElapsedSec >= alarmPersistenceSec ? (
+                      `Kebisingan Bertahan Penuh ${alarmPersistenceSec} Detik (Rata-rata: ${currentAvgNoisePercent}% — ${currentAvgNoisePercent >= 90 ? 'Sangat Berisik' : 'Berisik'})`
+                    ) : currentNoisyElapsedSec > 0 ? (
+                      `Mendeteksi Suara Berisik (${currentNoisyElapsedSec.toFixed(1)}s / ${alarmPersistenceSec}s) • Rata-rata: ${currentAvgNoisePercent}%`
+                    ) : (
+                      `Toleransi Waktu Alarm: ${alarmPersistenceSec} Detik`
+                    )}
+                  </span>
+                </div>
+                <div className="rt-hero-banner-countdown">
+                  {!isActive ? (
+                    <span>Klik <strong>Mulai Monitoring</strong> untuk menguji</span>
+                  ) : currentNoisyElapsedSec >= alarmPersistenceSec ? (
+                    <span className="rt-countdown-alarm-badge">ALARM AKTIF</span>
+                  ) : currentNoisyElapsedSec > 0 ? (
+                    <span>
+                      <strong>{(alarmPersistenceSec - currentNoisyElapsedSec).toFixed(1)}s</strong> lagi menuju alarm
+                    </span>
+                  ) : (
+                    <span>Kondisi Tenang (0.0s / {alarmPersistenceSec}s)</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Smooth Progress Track */}
+              <div className="rt-hero-banner-track">
+                <div
+                  className={`rt-hero-banner-fill ${currentNoisyElapsedSec >= alarmPersistenceSec ? 'firing' : ''}`}
+                  style={{
+                    width: isActive && currentNoisyElapsedSec > 0
+                      ? `${Math.min(100, (currentNoisyElapsedSec / alarmPersistenceSec) * 100)}%`
+                      : '0%'
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* 3 Key Metrics Row (Model Accuracy, Feature Count, Model Confidence) */}
           <div className="rt-hero-metrics">
             <div>
@@ -1127,11 +1302,19 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                   </span>
                 </div>
 
-                {/* Row 2: Interval Analisis */}
+                {/* Row 2: Frekuensi Analisis */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Interval Pembaruan</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Frekuensi Analisis</span>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                    {intervalSec} Detik
+                    1 Detik (Real-Time)
+                  </span>
+                </div>
+
+                {/* Row 2b: Durasi Tahan Berisik (Alarm) */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Tahan Berisik (Alarm)</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                    {alarmPersistenceSec === 0 ? '0s (Langsung Bunyi)' : `${alarmPersistenceSec} Detik`}
                   </span>
                 </div>
 
@@ -1156,7 +1339,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                     backgroundColor: !liveData ? 'rgba(0, 0, 0, 0.06)' : (isNoisy ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)'),
                     color: !liveData ? 'var(--text-secondary)' : (isNoisy ? '#EF4444' : '#10B981')
                   }}>
-                    {!liveData ? (isActive ? 'Mendengarkan...' : '○ Standby') : (isNoisy ? '🚨 Berisik' : '✓ Non-Berisik (Tenang)')}
+                    {!liveData ? (isActive ? 'Mendengarkan...' : 'Standby') : (isNoisy ? 'Berisik' : 'Non-Berisik (Tenang)')}
                   </span>
                 </div>
 
@@ -1229,59 +1412,6 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 <div>• Akurasi Pengujian: 92.5% (F1-Score: 92.5%)</div>
               </div>
             )}
-
-            {/* Interval Delay Control Strip (Clean Preset: 1 Detik, 3 Detik, 5 Detik) */}
-            <div style={{
-              padding: '12px 20px',
-              backgroundColor: '#FAFCF9',
-              borderTop: '1px solid rgba(0, 0, 0, 0.05)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  Interval Analisis
-                </span>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                  {intervalSec} Detik
-                </span>
-              </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '6px',
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                padding: '3px',
-                borderRadius: '8px'
-              }}>
-                {[1, 3, 5].map((sec) => {
-                  const isSelected = intervalSec === sec;
-                  return (
-                    <button
-                      key={sec}
-                      type="button"
-                      onClick={() => setIntervalSec(sec)}
-                      style={{
-                        padding: '6px 0',
-                        fontSize: '12px',
-                        fontWeight: isSelected ? 700 : 500,
-                        color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
-                        backgroundColor: isSelected ? '#FFFFFF' : 'transparent',
-                        borderRadius: '6px',
-                        boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      {sec} Detik
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
 
             {/* Room Ambient Noise Calibration Strip */}
             <div style={{
@@ -1800,7 +1930,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                     zIndex: 2,
                     boxShadow: '0 2px 6px rgba(255, 92, 38, 0.4)'
                   }}>
-                    ⚠
+                    <AlertTriangle size={11} strokeWidth={2.5} color="#FFFFFF" />
                   </div>
                 )}
                 <div style={{
@@ -1947,8 +2077,94 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
               fontWeight: 700,
               whiteSpace: 'nowrap'
             }}>
-              ≥ 90%: Sangat Berisik {activeAlarmLevel === 'high' ? '🚨 AKTIF' : ''}
+              ≥ 90%: Sangat Berisik {activeAlarmLevel === 'high' ? '● AKTIF' : ''}
             </span>
+          </div>
+        </div>
+
+        {/* Persistence Duration Filter & Live Indicator */}
+        <div className="rt-alarm-persistence">
+          <div className="rt-alarm-persistence-header">
+            <Clock size={13} style={{ color: 'var(--text-secondary)' }} />
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+              Pemicu Alarm:
+            </span>
+            {/* Custom Interactive Floating Dropdown */}
+            <div className="rt-custom-dropdown" ref={persistenceDropdownRef}>
+              <button
+                type="button"
+                className={`rt-custom-dropdown-trigger ${persistenceMenuOpen ? 'open' : ''}`}
+                onClick={() => setPersistenceMenuOpen(prev => !prev)}
+                aria-expanded={persistenceMenuOpen}
+                aria-haspopup="listbox"
+              >
+                <span className="rt-dropdown-current-label">
+                  {(PERSISTENCE_OPTIONS.find(o => o.val === alarmPersistenceSec) || PERSISTENCE_OPTIONS[1]).label}
+                </span>
+                <span className="rt-dropdown-current-badge">
+                  {(PERSISTENCE_OPTIONS.find(o => o.val === alarmPersistenceSec) || PERSISTENCE_OPTIONS[1]).badge}
+                </span>
+                <ChevronDown
+                  size={13}
+                  className={`rt-dropdown-chevron ${persistenceMenuOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {persistenceMenuOpen && (
+                <div className="rt-custom-dropdown-popover" role="listbox">
+                  <div className="rt-dropdown-popover-header">
+                    Pilih Toleransi Waktu Alarm
+                  </div>
+                  {PERSISTENCE_OPTIONS.map((opt) => {
+                    const isSelected = opt.val === alarmPersistenceSec;
+                    return (
+                      <div
+                        key={opt.val}
+                        role="option"
+                        aria-selected={isSelected}
+                        className={`rt-dropdown-item ${isSelected ? 'selected' : ''}`}
+                        onClick={() => {
+                          setAlarmPersistenceSec(opt.val);
+                          setPersistenceMenuOpen(false);
+                        }}
+                      >
+                        <div className="rt-dropdown-item-left">
+                          <div className={`rt-dropdown-radio ${isSelected ? 'active' : ''}`}>
+                            {isSelected && <Check size={11} strokeWidth={3} />}
+                          </div>
+                        </div>
+                        <div className="rt-dropdown-item-content">
+                          <div className="rt-dropdown-item-title-row">
+                            <span className="rt-dropdown-item-title">{opt.label}</span>
+                            <span className={`rt-dropdown-item-badge ${opt.val === 5 ? 'highlight' : ''}`}>
+                              {opt.badge}
+                            </span>
+                          </div>
+                          <div className="rt-dropdown-item-desc">{opt.desc}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            {alarmPersistenceSec > 0 && (
+              <span className={`rt-persistence-badge ${isActive ? (currentNoisyElapsedSec > 0 ? (currentNoisyElapsedSec >= alarmPersistenceSec ? 'badge-firing' : 'badge-active') : 'badge-idle') : 'badge-standby'}`}>
+                {isActive ? (
+                  currentNoisyElapsedSec > 0 ? (
+                    currentNoisyElapsedSec >= alarmPersistenceSec ? (
+                      `Berisik ${alarmPersistenceSec}s (Rata-rata: ${currentAvgNoisePercent}%)`
+                    ) : (
+                      `Bertahan: ${currentNoisyElapsedSec.toFixed(1)}s / ${alarmPersistenceSec}s (${currentAvgNoisePercent}%)`
+                    )
+                  ) : (
+                    `Siaga: 0.0s / ${alarmPersistenceSec}s (Tenang)`
+                  )
+                ) : (
+                  `Tahan ${alarmPersistenceSec}s (Standby)`
+                )}
+              </span>
+            )}
           </div>
         </div>
 
@@ -1986,7 +2202,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 opacity: activeAlarmLevel !== 'none' ? 0.5 : 1
               }}
             >
-              {testingAlarm === 'medium' ? 'Memutar...' : '▶ Tes Berisik'}
+              {testingAlarm === 'medium' ? 'Memutar...' : 'Tes Berisik'}
             </button>
             <button
               onClick={() => handleTestAlarm('high')}
@@ -2002,7 +2218,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 opacity: activeAlarmLevel !== 'none' ? 0.5 : 1
               }}
             >
-              {testingAlarm === 'high' ? 'Memutar...' : '▶ Tes Sangat Berisik'}
+              {testingAlarm === 'high' ? 'Memutar...' : 'Tes Sangat Berisik'}
             </button>
           </div>
         </div>
