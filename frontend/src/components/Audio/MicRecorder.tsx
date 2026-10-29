@@ -28,6 +28,9 @@ export const MicRecorder: React.FC<MicRecorderProps> = ({ onAudioRecorded, isLoa
     startTimeRef.current = Date.now();
 
     try {
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        throw new Error('Akses mikrofon membutuhkan koneksi aman (HTTPS) atau pengaturan flags browser karena diakses melalui IP LAN.');
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream);

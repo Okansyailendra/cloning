@@ -616,6 +616,9 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     try {
       let activeAnalyser = analyserRef.current;
       if (!activeAnalyser || !isActiveRef.current) {
+        if (!navigator?.mediaDevices?.getUserMedia) {
+          throw new Error('Akses mikrofon membutuhkan koneksi aman (HTTPS) atau pengaturan flags browser karena diakses melalui IP LAN.');
+        }
         localStream = await navigator.mediaDevices.getUserMedia({
           audio: {
             echoCancellation: false,
@@ -740,6 +743,9 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
     realRmsSumRef.current = 0;
 
     try {
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        throw new Error('Akses mikrofon membutuhkan koneksi aman (HTTPS) atau pengaturan flags browser karena diakses melalui IP LAN.');
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: false,
