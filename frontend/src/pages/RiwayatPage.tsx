@@ -157,9 +157,10 @@ export const RiwayatPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="glass-card" style={{ overflowX: 'auto', padding: '8px' }}>
+        <div className="glass-card responsive-table-scroll" style={{ padding: '8px' }}>
           <table style={{
             width: '100%',
+            minWidth: '720px',
             borderCollapse: 'collapse',
             fontSize: '13px',
             textAlign: 'left'

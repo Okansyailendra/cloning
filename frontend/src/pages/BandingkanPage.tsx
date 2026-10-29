@@ -161,12 +161,7 @@ export const BandingkanPage: React.FC = () => {
           )}
 
           {/* Selectors with Swap Button */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
-            gap: '16px',
-            alignItems: 'center'
-          }}>
+          <div className="compare-selectors-grid">
             {/* Audio A selector */}
             <div className="glass-card" style={{
               padding: '18px 20px',
@@ -202,20 +197,7 @@ export const BandingkanPage: React.FC = () => {
             <button
               onClick={handleSwap}
               title="Tukar Posisi (Sampel A ↔ Sampel B)"
-              style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--bg-surface-elevated)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: 'var(--text-primary)',
-                boxShadow: 'var(--shadow-sm)',
-                transition: 'all 0.15s ease'
-              }}
+              className="compare-swap-btn"
             >
               <GitCompare size={18} />
             </button>
@@ -299,14 +281,13 @@ export const BandingkanPage: React.FC = () => {
 
           {/* Side-by-side Features Table matched reliably by name */}
           {featuresA.length > 0 && featuresB.length > 0 && (
-            <div className="glass-card" style={{
-              padding: '24px',
-              overflowX: 'auto'
+            <div className="glass-card responsive-table-scroll" style={{
+              padding: '24px'
             }}>
               <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>
                 Perbandingan Nilai Fitur Audio Spektral
               </h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <table style={{ width: '100%', minWidth: '540px', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
                     <th style={{ padding: '12px 10px', textAlign: 'left', fontWeight: 600 }}>Fitur Akustik</th>

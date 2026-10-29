@@ -26,12 +26,14 @@ export const FeatureTable: React.FC<FeatureTableProps> = ({ features }) => {
         </p>
       </div>
 
-      <table style={{
-        width: '100%',
-        borderCollapse: 'collapse',
-        fontSize: '13px',
-        textAlign: 'left'
-      }}>
+      <div className="responsive-table-scroll">
+        <table style={{
+          width: '100%',
+          minWidth: '640px',
+          borderCollapse: 'collapse',
+          fontSize: '13px',
+          textAlign: 'left'
+        }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
             <th style={{ padding: '8px 10px', width: '40px' }}>#</th>
@@ -95,6 +97,7 @@ export const FeatureTable: React.FC<FeatureTableProps> = ({ features }) => {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 };

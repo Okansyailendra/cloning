@@ -31,7 +31,7 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({ prediction, file
       overflow: 'hidden'
     }}>
       {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <span style={{
             fontSize: '12px',

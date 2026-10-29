@@ -525,7 +525,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
         ctx.stroke();
       }
     });
-  }, [history]);
+  }, [history, rawOscilloscopeOpen]);
 
   // Send 3-second rolling buffer to backend
   const sendLivePrediction = useCallback(async () => {
@@ -905,15 +905,8 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', width: '100%' }}>
       {/* Mode Switcher Pill */}
-      <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-        <div style={{
-          display: 'inline-flex',
-          backgroundColor: 'rgba(255, 255, 255, 0.75)',
-          padding: '4px',
-          borderRadius: 'var(--radius-pill)',
-          border: '1px solid rgba(0, 0, 0, 0.06)',
-          gap: '4px'
-        }}>
+      <div className="mode-switcher-container">
+        <div className="mode-switcher-pill">
           <button
             onClick={() => onSwitchMode('realtime')}
             style={{
@@ -1026,56 +1019,29 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       {/* ============================================================== */}
       {/* 1. UPPER HERO SECTION (EXACT 1-TO-1 ASYMMETRIC GRID MATCH)     */}
       {/* ============================================================== */}
-      <section style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '32px',
-        alignItems: 'center',
-        minHeight: '380px'
-      }}>
+      <section className="rt-hero-grid">
         {/* KOLOM KIRI HERO: JUDUL BESAR, TEKS DESKRIPSI, TICK METER, 3 METRIK */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <div>
-            <h1 style={{
-              fontSize: '38px',
-              fontWeight: 800,
-              letterSpacing: '-0.03em',
-              lineHeight: 1.1,
-              color: 'var(--text-primary)',
-              textTransform: 'uppercase',
-              maxWidth: '520px'
-            }}>
+            <h1 className="rt-hero-title">
               Sistem Deteksi Kebisingan Audio Secara Real-Time
             </h1>
-            <p style={{
-              marginTop: '12px',
-              fontSize: '14px',
-              color: 'var(--text-secondary)',
-              lineHeight: 1.6,
-              maxWidth: '460px'
-            }}>
+            <p className="rt-hero-desc">
               Implementasi tugas mata kuliah Proyek Sains Data (PSD) untuk mendeteksi dan mengklasifikasikan suara berisik dan non-berisik secara real-time dari mikrofon menggunakan model Random Forest.
             </p>
           </div>
 
           {/* Segmented Bar Meter (22 Rounded Vertical Ticks - Orange / Grey) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}>
+            <div className="rt-bar-meter">
               {Array.from({ length: TOTAL_BARS }).map((_, idx) => {
                 const isLit = idx < activeBarsCount;
                 return (
                   <div
                     key={idx}
+                    className="rt-bar-tick"
                     style={{
-                      width: '8px',
-                      height: '20px',
-                      borderRadius: '4px',
                       backgroundColor: isLit ? 'var(--accent-orange)' : '#CBD3C6',
-                      transition: 'background-color 0.15s ease'
                     }}
                   />
                 );
@@ -1084,15 +1050,10 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
           </div>
 
           {/* 3 Key Metrics Row (Model Accuracy, Feature Count, Model Confidence) */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: '36px',
-            marginTop: '6px'
-          }}>
+          <div className="rt-hero-metrics">
             <div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                <span style={{ fontSize: '26px', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
+                <span className="rt-hero-metric-val">
                   92.5
                 </span>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>%</span>
@@ -1104,7 +1065,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
 
             <div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                <span style={{ fontSize: '26px', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
+                <span className="rt-hero-metric-val">
                   14
                 </span>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>Fitur</span>
@@ -1116,7 +1077,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
 
             <div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                <span style={{ fontSize: '26px', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
+                <span className="rt-hero-metric-val">
                   {liveData ? (liveData.confidence * 100).toFixed(1) : (isActive ? '...' : '--')}
                 </span>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>%</span>
@@ -1129,22 +1090,9 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
         </div>
 
         {/* KOLOM KANAN HERO: KARTU INSTRUMEN & KONTROL OPERASIONAL */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          minHeight: '380px'
-        }}>
+        <div className="rt-instrument-col">
           {/* Floating Matte White Instrument Card */}
-          <div style={{
-            width: '100%',
-            maxWidth: '400px',
-            backgroundColor: '#FFFFFF',
-            borderRadius: '20px',
-            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.08)',
-            border: '1px solid rgba(0, 0, 0, 0.05)',
-            overflow: 'hidden'
-          }}>
+          <div className="rt-instrument-card">
             {/* Accordion 1: Environmental / Acoustic Information */}
             <div
               onClick={() => setEnvInfoOpen(!envInfoOpen)}
@@ -1560,12 +1508,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       {/* ============================================================== */}
       {/* 2. BOTTOM BENTO GRID (3 CARDS)                                */}
       {/* ============================================================== */}
-      <section style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '20px',
-        width: '100%'
-      }}>
+      <section className="rt-bento-grid">
         {/* CARD 1: OVERVIEW ↗ (Speedometer + Stat K3) */}
         <div style={{
           backgroundColor: '#FFFFFF',
@@ -1907,57 +1850,31 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       {/* ============================================================== */}
       {/* 3. DIAGNOSTIK LANJUTAN: OSKILOSKOP 60 FPS & LINIMASA SPLINE     */}
       {/* ============================================================== */}
-      <div style={{
-        backgroundColor: '#FFFFFF',
-        borderRadius: '20px',
-        padding: '18px 24px',
-        boxShadow: '0 4px 18px rgba(0, 0, 0, 0.04)',
-        border: '1px solid rgba(0, 0, 0, 0.04)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px'
-      }}>
+      <div className="rt-diag-card">
         <div
           onClick={() => setRawOscilloscopeOpen(!rawOscilloscopeOpen)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            userSelect: 'none'
-          }}
+          className="rt-diag-header"
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Activity size={18} color="var(--accent-orange)" />
-            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              Oskiloskop Real-Time 60 FPS & Linimasa Riwayat (30 Detik)
-            </span>
-            <span style={{
-              fontSize: '11px',
-              fontFamily: 'var(--font-mono)',
-              padding: '2px 8px',
-              borderRadius: 'var(--radius-pill)',
-              backgroundColor: 'var(--bg-canvas)',
-              color: 'var(--text-secondary)'
-            }}>
+          <div className="rt-diag-header-left">
+            <div className="rt-diag-title-row">
+              <Activity size={18} color="var(--accent-orange)" style={{ flexShrink: 0 }} />
+              <span className="rt-diag-title">
+                Oskiloskop 60 FPS & Linimasa Riwayat
+              </span>
+            </div>
+            <span className="rt-diag-badge">
               22.050 Hz • 2048 Sampel
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, color: 'var(--accent-orange)' }}>
+          <div className="rt-diag-toggle-btn">
             <span>{rawOscilloscopeOpen ? 'Sembunyikan' : 'Buka Grafik Lengkap'}</span>
-            {rawOscilloscopeOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {rawOscilloscopeOpen ? <ChevronUp size={16} style={{ flexShrink: 0 }} /> : <ChevronDown size={16} style={{ flexShrink: 0 }} />}
           </div>
         </div>
 
         {rawOscilloscopeOpen && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '20px',
-            paddingTop: '10px',
-            borderTop: '1px solid rgba(0, 0, 0, 0.06)'
-          }}>
+          <div className="rt-diag-grid">
             {/* Oskiloskop Canvas */}
             <div>
               <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
@@ -2002,45 +1919,40 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
       {/* ============================================================== */}
       {/* 4. MODAL/DRAWER AMBANG ALARM & PENGUJIAN AUDIO                   */}
       {/* ============================================================== */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '12px',
-        padding: '14px 20px',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid rgba(0, 0, 0, 0.05)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Ambang Alarm:</span>
-          <span style={{
-            fontSize: '11px',
-            fontFamily: 'var(--font-mono)',
-            padding: '3px 8px',
-            borderRadius: 'var(--radius-pill)',
-            backgroundColor: activeAlarmLevel === 'medium' ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-canvas)',
-            color: '#F59E0B',
-            fontWeight: 700
-          }}>
-            70% - 90%: Berisik {activeAlarmLevel === 'medium' ? '● AKTIF' : ''}
+      <div className="rt-alarm-bar">
+        <div className="rt-alarm-levels">
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+            Ambang Alarm:
           </span>
-          <span style={{
-            fontSize: '11px',
-            fontFamily: 'var(--font-mono)',
-            padding: '3px 8px',
-            borderRadius: 'var(--radius-pill)',
-            backgroundColor: activeAlarmLevel === 'high' ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-canvas)',
-            color: '#EF4444',
-            fontWeight: 700
-          }}>
-            ≥ 90%: Sangat Berisik {activeAlarmLevel === 'high' ? '🚨 AKTIF' : ''}
-          </span>
+          <div className="rt-alarm-pills">
+            <span style={{
+              fontSize: '11px',
+              fontFamily: 'var(--font-mono)',
+              padding: '3px 8px',
+              borderRadius: 'var(--radius-pill)',
+              backgroundColor: activeAlarmLevel === 'medium' ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-canvas)',
+              color: '#F59E0B',
+              fontWeight: 700,
+              whiteSpace: 'nowrap'
+            }}>
+              70% - 90%: Berisik {activeAlarmLevel === 'medium' ? '● AKTIF' : ''}
+            </span>
+            <span style={{
+              fontSize: '11px',
+              fontFamily: 'var(--font-mono)',
+              padding: '3px 8px',
+              borderRadius: 'var(--radius-pill)',
+              backgroundColor: activeAlarmLevel === 'high' ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-canvas)',
+              color: '#EF4444',
+              fontWeight: 700,
+              whiteSpace: 'nowrap'
+            }}>
+              ≥ 90%: Sangat Berisik {activeAlarmLevel === 'high' ? '🚨 AKTIF' : ''}
+            </span>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="rt-alarm-controls">
           {/* Volume Slider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Vol:</span>
@@ -2059,7 +1971,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
           </div>
 
           {/* Test Buttons */}
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             <button
               onClick={() => handleTestAlarm('medium')}
               disabled={activeAlarmLevel !== 'none'}
@@ -2070,6 +1982,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 backgroundColor: 'var(--bg-canvas)',
                 color: '#F59E0B',
                 fontWeight: 600,
+                whiteSpace: 'nowrap',
                 opacity: activeAlarmLevel !== 'none' ? 0.5 : 1
               }}
             >
@@ -2085,6 +1998,7 @@ export const RealtimeMonitor: React.FC<RealtimeMonitorProps> = ({ viewMode, onSw
                 backgroundColor: 'var(--bg-canvas)',
                 color: '#EF4444',
                 fontWeight: 600,
+                whiteSpace: 'nowrap',
                 opacity: activeAlarmLevel !== 'none' ? 0.5 : 1
               }}
             >

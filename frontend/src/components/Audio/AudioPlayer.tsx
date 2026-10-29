@@ -102,7 +102,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, see
         onEnded={() => setIsPlaying(false)}
       />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div className="audio-player-controls">
         <button
           onClick={togglePlay}
           aria-label={isPlaying ? 'Jeda Audio' : 'Putar Audio'}
@@ -134,7 +134,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, onTimeUpdate, see
           <RotateCcw size={18} />
         </button>
 
-        <div style={{
+        <div className="audio-player-scrubber" style={{
           display: 'flex',
           alignItems: 'center',
           gap: '10px',

@@ -11,82 +11,44 @@ export const Navbar: React.FC = () => {
   ];
 
   return (
-    <header style={{
-      width: '100%',
-      position: 'sticky',
-      top: 0,
-      zIndex: 50,
-      backgroundColor: 'rgba(232, 236, 230, 0.88)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
-      padding: '16px 32px',
-      boxSizing: 'border-box'
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '20px',
-        width: '100%',
-        maxWidth: '1560px',
-        margin: '0 auto'
-      }}>
+    <header className="navbar-header">
+      <div className="navbar-container">
         {/* Brand Identity: Sonalyze Audio Wave Logo */}
-        <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <img
-            src="/logo.png"
-            alt="Sonalyze Logo"
-            style={{
-              width: '32px',
-              height: '32px',
-              objectFit: 'contain',
-              display: 'block'
-            }}
-          />
-          <span style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '22px',
-            fontWeight: 800,
-            letterSpacing: '-0.03em',
-            color: 'var(--text-primary)',
-            lineHeight: 1
-          }}>
-            Sonalyze
-          </span>
-        </NavLink>
+        <div className="navbar-brand-row">
+          <NavLink to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+            <img
+              src="/logo.png"
+              alt="Sonalyze Logo"
+              style={{
+                width: '32px',
+                height: '32px',
+                objectFit: 'contain',
+                display: 'block'
+              }}
+            />
+            <span style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '22px',
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              color: 'var(--text-primary)',
+              lineHeight: 1
+            }}>
+              Sonalyze
+            </span>
+          </NavLink>
+        </div>
 
         {/* Center Floating Capsule Pill Navbar */}
-        <nav style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '2px',
-          backgroundColor: 'rgba(255, 255, 255, 0.65)',
-          padding: '4px',
-          borderRadius: 'var(--radius-pill)',
-          border: '1px solid rgba(255, 255, 255, 0.85)',
-          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.03)',
-          backdropFilter: 'blur(10px)'
-        }}>
-          {navLinks.map(({ to, label }) => (
+        <nav className="navbar-nav">
+          {navLinks.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
-              style={({ isActive }) => ({
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '6px 16px',
-                borderRadius: 'var(--radius-pill)',
-                fontSize: '13px',
-                fontWeight: isActive ? 600 : 500,
-                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                backgroundColor: isActive ? 'var(--bg-surface)' : 'transparent',
-                boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.06)' : 'none',
-                transition: 'all 0.18s ease',
-                whiteSpace: 'nowrap'
-              })}
+              className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`}
             >
+              <Icon size={14} style={{ flexShrink: 0 }} />
               <span>{label}</span>
             </NavLink>
           ))}

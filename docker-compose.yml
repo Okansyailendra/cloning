@@ -10,7 +10,6 @@ services:
     environment:
       - PORT=8080
       - LOG_LEVEL=INFO
-      - ALLOWED_ORIGINS=*
     volumes:
       - ./data:/app/data:ro
       - ./samples:/app/samples:ro
